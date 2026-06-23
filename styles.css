@@ -65,6 +65,7 @@ video {
   height: 100%;
   object-fit: cover;
   background: transparent;
+  transform: scaleX(-1);
 }
 
 .preview-placeholder {
