@@ -33,11 +33,11 @@ video {
 
 .camera-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
-  gap: clamp(24px, 4vw, 56px);
+  grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.55fr);
+  gap: clamp(20px, 3vw, 44px);
   align-items: center;
   min-height: 100vh;
-  width: min(1180px, calc(100% - 32px));
+  width: min(1480px, calc(100% - 24px));
   margin: 0 auto;
   padding: 40px 0;
 }
