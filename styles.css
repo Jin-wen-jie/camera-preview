@@ -1,0 +1,222 @@
+:root {
+  color-scheme: light;
+  --ink: #111318;
+  --muted: #5b6472;
+  --paper: #f7f8f4;
+  --panel: #ffffff;
+  --line: #d8ddd3;
+  --accent: #0f766e;
+  --accent-dark: #0a4f4a;
+  --warning: #b42318;
+  --shadow: 0 22px 60px rgba(28, 35, 31, 0.16);
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+  background:
+    linear-gradient(120deg, rgba(15, 118, 110, 0.12), transparent 34%),
+    radial-gradient(circle at 80% 12%, rgba(238, 189, 90, 0.24), transparent 28%),
+    var(--paper);
+}
+
+button,
+video {
+  font: inherit;
+}
+
+.camera-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: center;
+  min-height: 100vh;
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 40px 0;
+}
+
+.preview-panel,
+.control-panel {
+  min-width: 0;
+}
+
+.preview-frame {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  border: 1px solid rgba(17, 19, 24, 0.12);
+  border-radius: 8px;
+  background: #151a1f;
+  box-shadow: var(--shadow);
+}
+
+.camera-preview {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: transparent;
+}
+
+.preview-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    #151a1f;
+  background-size: 48px 48px;
+}
+
+.preview-placeholder span {
+  width: 96px;
+  height: 96px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 24px rgba(255, 255, 255, 0.05);
+}
+
+.control-panel {
+  padding: clamp(8px, 2vw, 24px) 0;
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 6vw, 4.8rem);
+  line-height: 0.96;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.intro {
+  max-width: 36rem;
+  margin: 22px 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  margin: 32px 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.status-row::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  margin-right: 10px;
+  border-radius: 999px;
+  background: #9aa4b2;
+}
+
+.status-row[data-state="loading"]::before {
+  background: #d97706;
+}
+
+.status-row[data-state="ready"]::before {
+  background: var(--accent);
+}
+
+.status-row[data-state="error"] {
+  color: var(--warning);
+  border-color: rgba(180, 35, 24, 0.28);
+  background: rgba(255, 247, 245, 0.78);
+}
+
+.status-row[data-state="error"]::before {
+  background: var(--warning);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+button {
+  min-height: 46px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+button:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.24);
+  outline-offset: 3px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
+}
+
+.primary-button {
+  color: #ffffff;
+  background: var(--accent);
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--accent-dark);
+}
+
+.secondary-button {
+  color: var(--ink);
+  background: var(--panel);
+  border-color: var(--line);
+}
+
+.secondary-button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.hint {
+  max-width: 32rem;
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+@media (max-width: 860px) {
+  .camera-shell {
+    grid-template-columns: 1fr;
+    align-content: center;
+    padding: 24px 0;
+  }
+
+  .control-panel {
+    order: -1;
+  }
+}

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>摄像头预览</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="camera-shell" aria-labelledby="page-title">
+      <section class="preview-panel">
+        <div class="preview-frame">
+          <video
+            class="camera-preview"
+            data-camera-preview
+            autoplay
+            muted
+            playsinline
+            aria-label="笔记本摄像头画面"
+          ></video>
+          <div class="preview-placeholder" aria-hidden="true">
+            <span></span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="control-panel">
+        <p class="eyebrow">Local camera</p>
+        <h1 id="page-title">笔记本摄像头预览</h1>
+        <p class="intro">点击开启后，浏览器会请求摄像头权限。授权成功后，画面会直接显示在左侧。</p>
+
+        <div class="status-row" data-camera-status data-state="idle" role="status" aria-live="polite">
+          摄像头未开启
+        </div>
+
+        <div class="actions" aria-label="摄像头控制">
+          <button class="primary-button" type="button" data-camera-start>开启摄像头</button>
+          <button class="secondary-button" type="button" data-camera-stop>停止</button>
+        </div>
+
+        <p class="hint">如果看不到权限弹窗，请确认正在通过 localhost 或 HTTPS 打开页面。</p>
+      </aside>
+    </main>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
