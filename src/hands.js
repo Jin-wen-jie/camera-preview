@@ -5,8 +5,8 @@ const HAND_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_lan
 const THUMB_TIP = 4;
 const INDEX_TIP = 8;
 const TRAIL_RETENTION_MS = 5000;
-const PINCH_START_RATIO = 0.18;
-const PINCH_STOP_RATIO = 0.34;
+const PINCH_START_RATIO = 0.56;
+const PINCH_STOP_RATIO = 0.82;
 const PINCH_HOLD_MS = 120;
 
 function setStatus(status, text, state) {
@@ -15,6 +15,10 @@ function setStatus(status, text, state) {
   if (status.dataset) {
     status.dataset.state = state;
   }
+}
+
+function formatRatio(value) {
+  return Number.isFinite(value) ? value.toFixed(2) : '--';
 }
 
 function hasPoint(landmarks, index) {
@@ -230,7 +234,7 @@ export function createIndexFingerTrailController({
       pinchSince ??= timestamp;
       if (!recording && timestamp - pinchSince >= PINCH_HOLD_MS) {
         recording = true;
-        updateStatus('记录中', 'recording');
+        updateStatus(`记录中 ratio=${formatRatio(pinchRatio)}`, 'recording');
       }
       return;
     }
@@ -240,8 +244,10 @@ export function createIndexFingerTrailController({
       if (recording) {
         recording = false;
         currentStroke = null;
-        updateStatus('分开已暂停', 'paused');
+        updateStatus(`分开已暂停 ratio=${formatRatio(pinchRatio)}`, 'paused');
       }
+    } else if (!recording) {
+      updateStatus(`靠近一点 ratio=${formatRatio(pinchRatio)}`, 'waiting');
     }
   }
 

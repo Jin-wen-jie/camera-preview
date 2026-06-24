@@ -56,6 +56,13 @@ function separatedLandmarks() {
   return points;
 }
 
+function loosePinchLandmarks() {
+  const points = pinchedLandmarks();
+  points[4] = landmark(0.34, 0.28);
+  points[8] = landmark(0.46, 0.24);
+  return points;
+}
+
 function pinchedAt(x, y) {
   const points = pinchedLandmarks();
   points[4] = landmark(x - 0.01, y + 0.01);
@@ -101,6 +108,7 @@ test('pinch ratio is normalized by palm width', () => {
 
 test('isFingerPinched uses normalized thumb-index distance', () => {
   assert.equal(isFingerPinched(pinchedLandmarks()), true);
+  assert.equal(isFingerPinched(loosePinchLandmarks()), true);
   assert.equal(isFingerPinched(separatedLandmarks()), false);
 });
 
@@ -145,6 +153,23 @@ test('controller records while pinched and pauses when fingers separate', () => 
   controller.processLandmarks(separatedLandmarks(), 1500);
   assert.equal(controller.getTrailPoints().length, 2);
   assert.deepEqual(states, ['recording', 'paused']);
+});
+
+test('controller starts recording for a loose real-camera pinch', () => {
+  const controller = createIndexFingerTrailController({
+    video: { videoWidth: 640, videoHeight: 480 },
+    canvas: createCanvas(),
+    status: { textContent: '', dataset: {} },
+    createHandLandmarker: async () => null,
+    requestAnimationFrame: () => 0,
+    cancelAnimationFrame: () => {},
+    now: () => 0
+  });
+
+  controller.processLandmarks(loosePinchLandmarks(), 1000);
+  assert.equal(controller.isRecording(), false);
+  controller.processLandmarks(loosePinchLandmarks(), 1150);
+  assert.equal(controller.isRecording(), true);
 });
 
 test('controller clears the screen when five fingers open', () => {
