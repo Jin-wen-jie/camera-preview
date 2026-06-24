@@ -15,6 +15,14 @@ test('desktop layout gives most of the page width to the camera preview', async 
   assert.match(css, /width:\s*min\(1480px,\s*calc\(100% - 24px\)\)/);
 });
 
+test('voice command large view can expand the camera preview area', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.camera-shell\[data-camera-view="large"\]\s*\{/);
+  assert.match(css, /grid-template-columns:\s*minmax\(0,\s*2\.35fr\)\s*minmax\(260px,\s*0\.45fr\)/);
+  assert.match(css, /width:\s*min\(1680px,\s*calc\(100% - 16px\)\)/);
+});
+
 test('live captions are overlaid at the bottom of the camera preview', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
@@ -32,15 +40,15 @@ test('hand trails are layered over the camera preview', async () => {
   assert.match(css, /\.hand-status\s*\{[^}]*position:\s*absolute/s);
 });
 
-test('voice effects are layered over the camera preview with flower animation only', async () => {
+test('voice effects are layered over the camera preview with full-screen flower sea animation', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(css, /\.voice-effect-layer\s*\{[^}]*position:\s*absolute/s);
   assert.match(css, /\.voice-effect-layer\s*\{[^}]*inset:\s*0/s);
   assert.match(css, /\.voice-effect-layer\s*\{[^}]*z-index:\s*4/s);
-  assert.match(css, /\.voice-effect--flower\s*\{[^}]*top:\s*var\(--effect-y,\s*50%\)/s);
   assert.match(css, /\.voice-effect-impact\s*\{[^}]*animation:\s*impact-ring/s);
-  assert.match(css, /\.voice-effect--petal\s*\{[^}]*animation:\s*petal-burst/s);
+  assert.match(css, /\.voice-effect--falling-flower\s*\{[^}]*animation:\s*flower-fall/s);
+  assert.match(css, /@keyframes flower-fall/);
   assert.doesNotMatch(css, /data-effect="snow"/);
   assert.doesNotMatch(css, /voice-effect--heart/);
 });

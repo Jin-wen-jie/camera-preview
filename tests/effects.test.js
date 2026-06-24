@@ -37,19 +37,11 @@ function createLayer() {
   };
 }
 
-function readVector(child) {
-  const x = child.style.values['--x'].match(/^(-?\d+(?:\.\d+)?)([a-z%]+)$/);
-  const y = child.style.values['--y'].match(/^(-?\d+(?:\.\d+)?)([a-z%]+)$/);
-
-  return {
-    x: Number(x?.[1]),
-    y: Number(y?.[1]),
-    xUnit: x?.[2],
-    yUnit: y?.[2]
-  };
+function readPercent(value) {
+  return Number(value.replace('%', ''));
 }
 
-test('voice effect controller shows a centered flower heart burst when speech contains 花', () => {
+test('voice effect controller shows a full-screen falling flower sea when speech contains 花', () => {
   const layer = createLayer();
   const effects = createVoiceEffectController({
     layer,
@@ -67,35 +59,22 @@ test('voice effect controller shows a centered flower heart burst when speech co
   assert.equal(result, 'flower');
   assert.equal(layer.dataset.effect, 'flower');
   assert.ok(layer.children.some((child) => child.className === 'voice-effect-impact'));
-  const faceFlower = layer.children.find((child) => child.className === 'voice-effect voice-effect--flower');
-  assert.ok(faceFlower);
-  assert.equal(faceFlower.textContent, '🌸');
-  assert.ok(layer.children.some((child) => child.className === 'voice-effect voice-effect--petal'));
-  assert.ok(layer.children.length >= 20);
 
-  const flyingPetals = layer.children.filter((child) => child.className === 'voice-effect voice-effect--petal');
-  assert.equal(flyingPetals.length, 36);
-  assert.ok(flyingPetals.every((child) => child.textContent === '❤'));
+  const fallingFlowers = layer.children.filter((child) => (
+    child.className === 'voice-effect voice-effect--falling-flower'
+  ));
+  assert.equal(fallingFlowers.length, 108);
+  assert.ok(fallingFlowers.every((child) => ['🌸', '🌺', '✿', '❀', '❁'].includes(child.textContent)));
+  assert.ok(fallingFlowers.every((child) => child.style.values['--x'].endsWith('%')));
+  assert.ok(fallingFlowers.every((child) => child.style.values['--delay'].endsWith('ms')));
+  assert.ok(fallingFlowers.every((child) => child.style.values['--duration'].endsWith('ms')));
+  assert.ok(fallingFlowers.every((child) => child.style.values['--drift'].endsWith('vw')));
 
-  const vectors = flyingPetals.map(readVector);
-  assert.ok(vectors.every(({ xUnit, yUnit }) => xUnit === 'vmin' && yUnit === 'vmin'));
-
-  const xs = vectors.map(({ x }) => x);
-  const ys = vectors.map(({ y }) => y);
-  const width = Math.max(...xs) - Math.min(...xs);
-  const height = Math.max(...ys) - Math.min(...ys);
-  assert.ok(width / height < 1.2);
-
-  const centerX = (Math.max(...xs) + Math.min(...xs)) / 2;
-  const centerY = (Math.max(...ys) + Math.min(...ys)) / 2;
-  assert.ok(Math.abs(centerX) < 0.25);
-  assert.ok(Math.abs(centerY) < 0.25);
-
-  assert.ok(vectors.some(({ x, y }) => x < -20 && y < 2));
-  assert.ok(vectors.some(({ x, y }) => x > 20 && y < 2));
-  assert.ok(vectors.some(({ y }) => y < -12));
-  assert.ok(vectors.some(({ x, y }) => Math.abs(x) < 1 && y > 18));
-  assert.ok(vectors.some(({ x, y }) => Math.abs(x) < 1 && y > -12 && y < -8));
+  const xs = fallingFlowers.map((child) => readPercent(child.style.values['--x']));
+  assert.ok(Math.min(...xs) <= 1);
+  assert.ok(Math.max(...xs) >= 99);
+  assert.ok(new Set(fallingFlowers.map((child) => child.textContent)).size >= 4);
+  assert.equal(layer.children.some((child) => child.className === 'voice-effect voice-effect--petal'), false);
 });
 
 test('voice effect controller understands the one-character flower command', () => {
@@ -117,7 +96,7 @@ test('voice effect controller understands the one-character flower command', () 
   assert.equal(layer.dataset.effect, 'flower');
 });
 
-test('voice effect controller positions flower burst at a supplied origin', () => {
+test('voice effect controller keeps flower sea independent of supplied face origin', () => {
   const layer = createLayer();
   const effects = createVoiceEffectController({
     layer,
@@ -132,8 +111,8 @@ test('voice effect controller positions flower burst at a supplied origin', () =
 
   effects.triggerFromTranscript('花', { origin: { x: 70, y: 23 } });
 
-  assert.equal(layer.style.values['--effect-x'], '70%');
-  assert.equal(layer.style.values['--effect-y'], '23%');
+  assert.equal(layer.style.values['--effect-x'], undefined);
+  assert.equal(layer.style.values['--effect-y'], undefined);
 });
 
 test('voice effect controller ignores removed snow and heart commands', () => {

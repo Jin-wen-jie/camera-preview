@@ -1,11 +1,12 @@
 import { startCamera, stopCamera } from './camera.js';
 import { createCaptionController } from './captions.js?v=replace-latest-2';
-import { createVoiceEffectController } from './effects.js?v=flower-center';
+import { createVoiceEffectController } from './effects.js?v=flower-sea';
 import { createFaceAnchorDetector } from './face.js?v=robust-face';
 import { dispatchFingerWritingResult } from './finger-writing-events.js?v=finger-writing-result';
 import { createIndexFingerTrailController } from './hands.js?v=center-index-finger';
-import { parseVoiceCommand } from './voice-commands.js?v=flower-command';
+import { parseVoiceCommand } from './voice-commands.js?v=semantic-voice';
 
+const cameraShell = document.querySelector('[data-camera-shell]');
 const video = document.querySelector('[data-camera-preview]');
 const status = document.querySelector('[data-camera-status]');
 const startButton = document.querySelector('[data-camera-start]');
@@ -67,23 +68,19 @@ function setVoiceCommandStatus(label, result, state = 'ready') {
 }
 
 async function getEffectOrigin(effectType) {
-  if (effectType !== 'flower') {
-    return undefined;
-  }
-
-  setEffectStatus('正在定位人脸...', 'loading');
-  return faceAnchorDetector.detect();
+  return undefined;
 }
 
 function getEffectReadyText(effect) {
-  const faceStatus = effect === 'flower'
-    ? faceAnchorDetector.getStatus()
-    : null;
-  const statusText = faceStatus?.message
-    ? `（${faceStatus.message}）`
-    : '';
+  return `已执行：${effectLabels[effect]}`;
+}
 
-  return `已执行：${effectLabels[effect]}${statusText}`;
+function setCameraView(view) {
+  cameraShell.dataset.cameraView = view;
+}
+
+function setCaptionVisibility(isVisible) {
+  captionOutput.hidden = !isVisible;
 }
 
 async function triggerVisualEffect(prompt) {
@@ -103,6 +100,28 @@ async function executeVoiceCommand(command, transcript) {
 
     setEffectStatus(getEffectReadyText(effect), 'ready');
     return { text: `已执行：${command.label}`, state: 'ready' };
+  }
+
+  if (command.type === 'clear-effects') {
+    voiceEffects.clear();
+    setEffectStatus('特效已清除', 'ready');
+    return { text: '已清除特效', state: 'ready' };
+  }
+
+  if (command.type === 'camera-view') {
+    setCameraView(command.view);
+    return {
+      text: command.view === 'large' ? '画面已放大' : '画面已恢复',
+      state: 'ready'
+    };
+  }
+
+  if (command.type === 'caption-visibility') {
+    setCaptionVisibility(command.visible);
+    return {
+      text: command.visible ? '字幕已显示' : '字幕已隐藏',
+      state: 'ready'
+    };
   }
 
   return { text: '没有识别到可执行指令', state: 'error' };

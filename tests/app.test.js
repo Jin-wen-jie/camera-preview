@@ -8,12 +8,13 @@ const preferredVideoConstraints = {
   frameRate: { ideal: 60, max: 60 }
 };
 
-test('page and app cache-bust voice command parsing with the flower command version', async () => {
+test('page and app cache-bust semantic voice modules together', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const source = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
 
-  assert.match(html, /src="\.\/src\/app\.js\?v=flower-command"/);
-  assert.match(source, /voice-commands\.js\?v=flower-command/);
+  assert.match(html, /src="\.\/src\/app\.js\?v=semantic-voice"/);
+  assert.match(source, /effects\.js\?v=flower-sea/);
+  assert.match(source, /voice-commands\.js\?v=semantic-voice/);
 });
 
 function createButton() {
@@ -348,9 +349,85 @@ test('app triggers flower effects from recognized speech', async () => {
   await flushAsyncEffects();
 
   assert.equal(effectLayer.dataset.effect, 'flower');
-  assert.ok(effectLayer.children.length >= 20);
-  assert.ok(effectLayer.children.some((child) => child.className === 'voice-effect voice-effect--flower'));
-  assert.ok(effectLayer.children.some((child) => child.className === 'voice-effect voice-effect--petal'));
+  assert.ok(effectLayer.children.length >= 100);
+  assert.ok(effectLayer.children.some((child) => child.className === 'voice-effect voice-effect--falling-flower'));
+  assert.equal(effectLayer.children.some((child) => child.className === 'voice-effect voice-effect--petal'), false);
+});
+
+test('app clears visual effects from recognized speech meaning', async () => {
+  FakeSpeechRecognition.instances = [];
+  const stream = { getTracks: () => [] };
+
+  const { captionStartButton, effectLayer, voiceCommandText, voiceCommandResult } = await loadAppWithFakes({
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  captionStartButton.click();
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '来点花雨', isFinal: false });
+  await flushAsyncEffects();
+  assert.equal(effectLayer.dataset.effect, 'flower');
+
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '不要特效了恢复正常', isFinal: false });
+  await flushAsyncEffects();
+
+  assert.equal(effectLayer.dataset.effect, undefined);
+  assert.equal(effectLayer.children.length, 0);
+  assert.equal(voiceCommandText.textContent, '清除特效');
+  assert.equal(voiceCommandResult.textContent, '已清除特效');
+});
+
+test('app changes the camera view size from recognized speech meaning', async () => {
+  FakeSpeechRecognition.instances = [];
+  const stream = { getTracks: () => [] };
+
+  const { captionStartButton, cameraShell, voiceCommandText, voiceCommandResult } = await loadAppWithFakes({
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  captionStartButton.click();
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '把摄像头画面放大一点', isFinal: false });
+  await flushAsyncEffects();
+
+  assert.equal(cameraShell.dataset.cameraView, 'large');
+  assert.equal(voiceCommandText.textContent, '放大画面');
+  assert.equal(voiceCommandResult.textContent, '画面已放大');
+
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '恢复画面大小', isFinal: false });
+  await flushAsyncEffects();
+
+  assert.equal(cameraShell.dataset.cameraView, 'normal');
+  assert.equal(voiceCommandText.textContent, '恢复大小');
+  assert.equal(voiceCommandResult.textContent, '画面已恢复');
+});
+
+test('app toggles caption visibility from recognized speech meaning', async () => {
+  FakeSpeechRecognition.instances = [];
+  const stream = { getTracks: () => [] };
+
+  const { captionStartButton, captionOutput, voiceCommandText, voiceCommandResult } = await loadAppWithFakes({
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  captionStartButton.click();
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '隐藏字幕', isFinal: false });
+  await flushAsyncEffects();
+
+  assert.equal(captionOutput.hidden, true);
+  assert.equal(voiceCommandText.textContent, '隐藏字幕');
+  assert.equal(voiceCommandResult.textContent, '字幕已隐藏');
+
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '显示字幕', isFinal: false });
+  await flushAsyncEffects();
+
+  assert.equal(captionOutput.hidden, false);
+  assert.equal(voiceCommandText.textContent, '显示字幕');
+  assert.equal(voiceCommandResult.textContent, '字幕已显示');
 });
 
 test('app triggers flower effects from typed commands', async () => {
@@ -366,7 +443,7 @@ test('app triggers flower effects from typed commands', async () => {
   await effectForm.submit();
 
   assert.equal(effectLayer.dataset.effect, 'flower');
-  assert.ok(effectLayer.children.length >= 20);
+  assert.ok(effectLayer.children.length >= 100);
   assert.match(effectStatus.textContent, /^已执行：花/);
   assert.equal(effectStatus.dataset.state, 'ready');
 });
@@ -391,9 +468,11 @@ test('app rejects removed typed commands', async () => {
   assert.equal(effectStatus.dataset.state, 'error');
 });
 
-test('app positions flower effects above a detected face from typed commands', async () => {
+test('app shows flower sea without waiting for face detection from typed commands', async () => {
+  const faceDetections = [];
   class FakeFaceDetector {
     async detect() {
+      faceDetections.push('detect');
       return [
         {
           boundingBox: { x: 200, y: 150, width: 200, height: 180 }
@@ -415,8 +494,9 @@ test('app positions flower effects above a detected face from typed commands', a
   await effectForm.submit();
 
   assert.equal(effectLayer.dataset.effect, 'flower');
-  assert.equal(effectLayer.style.values['--effect-x'], '70%');
-  assert.equal(effectLayer.style.values['--effect-y'], '23%');
+  assert.equal(effectLayer.style.values['--effect-x'], undefined);
+  assert.equal(effectLayer.style.values['--effect-y'], undefined);
+  assert.deepEqual(faceDetections, []);
 });
 
 test('app executes recognized finger writing commands from the window event', async () => {
