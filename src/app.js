@@ -4,7 +4,7 @@ import { createVoiceEffectController } from './effects.js?v=flower-center';
 import { createFaceAnchorDetector } from './face.js?v=robust-face';
 import { dispatchFingerWritingResult } from './finger-writing-events.js?v=finger-writing-result';
 import { createIndexFingerTrailController } from './hands.js?v=center-index-finger';
-import { parseVoiceCommand } from './voice-commands.js?v=index-finger-trail';
+import { parseVoiceCommand } from './voice-commands.js?v=flower-command';
 
 const video = document.querySelector('[data-camera-preview]');
 const status = document.querySelector('[data-camera-status]');

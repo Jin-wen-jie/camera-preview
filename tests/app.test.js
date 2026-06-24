@@ -1,5 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+test('page and app cache-bust voice command parsing with the flower command version', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const source = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
+
+  assert.match(html, /src="\.\/src\/app\.js\?v=flower-command"/);
+  assert.match(source, /voice-commands\.js\?v=flower-command/);
+});
 
 function createButton() {
   const listeners = {};
