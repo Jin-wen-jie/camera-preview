@@ -1,24 +1,9 @@
-const TRIGGERS = [
-  {
-    phrases: ['开花', '一朵花', '放花', '花朵', '头上花'],
-    type: 'flower',
-    className: 'voice-effect voice-effect--flower',
-    content: '✿'
-  },
-  {
-    phrases: ['爱心', '比心', '红心', '心形'],
-    type: 'heart',
-    className: 'voice-effect voice-effect--heart',
-    content: '♥'
-  },
-  {
-    phrases: ['下雪', '飘雪', '雪花'],
-    type: 'snow',
-    className: 'voice-effect voice-effect--snow',
-    content: '❄',
-    count: 42
-  }
-];
+const FLOWER_TRIGGER = {
+  phrases: ['开花', '一朵花', '放花', '花朵', '头上花'],
+  type: 'flower',
+  className: 'voice-effect voice-effect--flower',
+  content: '*'
+};
 
 function normalizeTranscript(text) {
   return String(text || '').replace(/\s+/g, '');
@@ -28,16 +13,7 @@ function setStyleIndex(element, index) {
   element.style?.setProperty?.('--i', String(index));
 }
 
-function setBurstVector(element, index, total, radius) {
-  const angle = (Math.PI * 2 * index) / total;
-  const x = Math.cos(angle) * radius;
-  const y = Math.sin(angle) * radius;
-  element.style?.setProperty?.('--x', `${x.toFixed(2)}vw`);
-  element.style?.setProperty?.('--y', `${y.toFixed(2)}vh`);
-  element.style?.setProperty?.('--r', `${Math.round((angle * 180) / Math.PI)}deg`);
-}
-
-function setHeartOutlineVector(element, index, total) {
+function setPetalVector(element, index, total) {
   const angle = (Math.PI * 2 * index) / total;
   const x = 16 * Math.sin(angle) ** 3;
   const y = (
@@ -82,87 +58,50 @@ export function createVoiceEffectController({
     }, durationMs);
   }
 
-  function appendSingleEffect(trigger) {
+  function appendImpact() {
     const element = createElement('span');
-    element.className = trigger.className;
-    element.textContent = trigger.content;
+    element.className = 'voice-effect-impact';
     layer.append(element);
   }
 
-  function appendImpact(type) {
+  function appendFlowerHead() {
     const element = createElement('span');
-    element.className = type === 'heart'
-      ? 'voice-effect-impact voice-effect-impact--heart'
-      : 'voice-effect-impact';
+    element.className = FLOWER_TRIGGER.className;
+    element.textContent = FLOWER_TRIGGER.content;
     layer.append(element);
   }
 
-  function appendRepeatedEffect(trigger) {
-    for (let index = 0; index < trigger.count; index += 1) {
-      const element = createElement('span');
-      element.className = trigger.className;
-      element.textContent = trigger.content;
-      setStyleIndex(element, index);
-      element.style?.setProperty?.('--drift', `${index % 2 === 0 ? '-' : ''}${8 + (index % 5) * 4}vw`);
-      layer.append(element);
-    }
-  }
-
-  function appendFlowerEffect(trigger) {
-    appendImpact('flower');
-    appendSingleEffect(trigger);
-
+  function appendPetals() {
     const petalCount = 36;
     for (let index = 0; index < petalCount; index += 1) {
       const element = createElement('span');
       element.className = 'voice-effect voice-effect--petal';
-      element.textContent = '✿';
+      element.textContent = '*';
       setStyleIndex(element, index);
-      setHeartOutlineVector(element, index, petalCount);
-      layer.append(element);
-    }
-  }
-
-  function appendHeartEffect(trigger) {
-    appendImpact('heart');
-
-    const heartCount = 14;
-    for (let index = 0; index < heartCount; index += 1) {
-      const element = createElement('span');
-      element.className = trigger.className;
-      element.textContent = trigger.content;
-      setStyleIndex(element, index);
-      setBurstVector(element, index, heartCount, 24);
+      setPetalVector(element, index, petalCount);
       layer.append(element);
     }
   }
 
   function findTrigger(text) {
     const normalizedText = normalizeTranscript(text);
-    return TRIGGERS.find(({ phrases }) => (
-      phrases.some((phrase) => normalizedText.includes(phrase))
-    ));
+    return FLOWER_TRIGGER.phrases.some((phrase) => normalizedText.includes(phrase))
+      ? FLOWER_TRIGGER
+      : null;
   }
 
-  function show(trigger, origin) {
+  function show(origin) {
     clear();
     setEffectOrigin(layer, origin);
     if (layer?.dataset) {
-      layer.dataset.effect = trigger.type;
+      layer.dataset.effect = FLOWER_TRIGGER.type;
     }
 
-    if (trigger.type === 'flower') {
-      appendFlowerEffect(trigger);
-    } else if (trigger.type === 'heart') {
-      appendHeartEffect(trigger);
-    } else if (trigger.count) {
-      appendRepeatedEffect(trigger);
-    } else {
-      appendSingleEffect(trigger);
-    }
-
+    appendImpact();
+    appendFlowerHead();
+    appendPetals();
     scheduleClear();
-    return trigger.type;
+    return FLOWER_TRIGGER.type;
   }
 
   return {
@@ -171,8 +110,7 @@ export function createVoiceEffectController({
       return findTrigger(text)?.type || false;
     },
     triggerFromTranscript(text, { origin } = {}) {
-      const trigger = findTrigger(text);
-      return trigger ? show(trigger, origin) : false;
+      return findTrigger(text) ? show(origin) : false;
     }
   };
 }

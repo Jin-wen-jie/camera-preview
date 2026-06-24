@@ -67,12 +67,41 @@ class FakeSpeechRecognition {
   }
 }
 
-async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRecognition, FaceDetector }) {
+function createCanvas() {
+  return {
+    width: 0,
+    height: 0,
+    getContext(type) {
+      return type === '2d'
+        ? {
+          clearRect() {},
+          beginPath() {},
+          moveTo() {},
+          lineTo() {},
+          stroke() {},
+          set strokeStyle(value) {},
+          set lineWidth(value) {},
+          set lineCap(value) {},
+          set lineJoin(value) {}
+        }
+        : null;
+    }
+  };
+}
+
+async function loadAppWithFakes({
+  getUserMedia,
+  SpeechRecognition = FakeSpeechRecognition,
+  FaceDetector,
+  requestAnimationFrame = () => 0,
+  cancelAnimationFrame = () => {}
+}) {
   const video = {
     videoWidth: 1000,
     videoHeight: 500,
     clientWidth: 1000,
     clientHeight: 500,
+    currentTime: 0,
     srcObject: null,
     async play() {}
   };
@@ -85,7 +114,8 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
   const effectStatus = { textContent: '', dataset: {} };
   const voiceCommandText = { textContent: '', dataset: {} };
   const voiceCommandResult = { textContent: '', dataset: {} };
-  const snapshotPreview = { hidden: true, src: '', alt: '' };
+  const handTrails = createCanvas();
+  const handStatus = { textContent: '', dataset: {} };
   const effectLayer = {
     children: [],
     dataset: {},
@@ -123,29 +153,21 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
     '[data-effect-status]': effectStatus,
     '[data-voice-command-text]': voiceCommandText,
     '[data-voice-command-result]': voiceCommandResult,
-    '[data-snapshot-preview]': snapshotPreview,
-    '[data-voice-effects]': effectLayer
+    '[data-voice-effects]': effectLayer,
+    '[data-hand-trails]': handTrails,
+    '[data-hand-status]': handStatus
   };
 
   const previousDocument = globalThis.document;
   const previousWindow = globalThis.window;
   const previousNavigator = globalThis.navigator;
+  const previousRaf = globalThis.requestAnimationFrame;
+  const previousCancelRaf = globalThis.cancelAnimationFrame;
 
   globalThis.document = {
     createElement(tagName) {
       if (tagName === 'canvas') {
-        return {
-          width: 0,
-          height: 0,
-          getContext(type) {
-            return type === '2d'
-              ? { drawImage() {} }
-              : null;
-          },
-          toDataURL(type) {
-            return `data:${type};base64,fake-snapshot`;
-          }
-        };
+        return createCanvas();
       }
 
       return {
@@ -172,6 +194,8 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
       }
     }
   };
+  globalThis.requestAnimationFrame = requestAnimationFrame;
+  globalThis.cancelAnimationFrame = cancelAnimationFrame;
   Object.defineProperty(globalThis, 'navigator', {
     configurable: true,
     value: { mediaDevices: { getUserMedia } }
@@ -193,15 +217,18 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
       effectStatus,
       voiceCommandText,
       voiceCommandResult,
-      snapshotPreview,
       effectLayer,
       captionStartButton,
       captionStopButton,
+      handTrails,
+      handStatus,
       beforeUnloadListeners
     };
   } finally {
     globalThis.document = previousDocument;
     globalThis.window = previousWindow;
+    globalThis.requestAnimationFrame = previousRaf;
+    globalThis.cancelAnimationFrame = previousCancelRaf;
     Object.defineProperty(globalThis, 'navigator', {
       configurable: true,
       value: previousNavigator
@@ -209,11 +236,11 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
   }
 }
 
-test('app automatically starts the camera when the page loads', async () => {
+test('app automatically starts the camera and hand trail status when the page loads', async () => {
   const calls = [];
   const stream = { getTracks: () => [] };
 
-  const { video, startButton, stopButton, status } = await loadAppWithFakes({
+  const { video, startButton, stopButton, status, handStatus } = await loadAppWithFakes({
     async getUserMedia(constraints) {
       calls.push(constraints);
       return stream;
@@ -225,6 +252,7 @@ test('app automatically starts the camera when the page loads', async () => {
   assert.equal(startButton.disabled, true);
   assert.equal(stopButton.disabled, false);
   assert.equal(status.textContent, '摄像头已开启');
+  assert.equal(handStatus.textContent, '等待五指张开开始');
 });
 
 test('app keeps the start button available when automatic startup fails', async () => {
@@ -259,7 +287,7 @@ test('app starts live captions from the caption button', async () => {
   assert.equal(captionStatus.textContent, '正在听你说话');
 });
 
-test('app triggers visual effects from recognized speech', async () => {
+test('app triggers flower effects from recognized speech', async () => {
   FakeSpeechRecognition.instances = [];
   class FakeFaceDetector {
     async detect() {
@@ -290,7 +318,7 @@ test('app triggers visual effects from recognized speech', async () => {
   assert.ok(effectLayer.children.some((child) => child.className === 'voice-effect voice-effect--petal'));
 });
 
-test('app triggers visual effects from typed commands', async () => {
+test('app triggers flower effects from typed commands', async () => {
   const stream = { getTracks: () => [] };
 
   const { effectForm, effectInput, effectStatus, effectLayer } = await loadAppWithFakes({
@@ -299,13 +327,33 @@ test('app triggers visual effects from typed commands', async () => {
     }
   });
 
-  effectInput.value = '让画面下雪';
+  effectInput.value = '开花';
   await effectForm.submit();
 
-  assert.equal(effectLayer.dataset.effect, 'snow');
-  assert.equal(effectLayer.children.length, 42);
-  assert.equal(effectStatus.textContent, '已执行：下雪');
+  assert.equal(effectLayer.dataset.effect, 'flower');
+  assert.ok(effectLayer.children.length >= 20);
+  assert.match(effectStatus.textContent, /^已执行：开花/);
   assert.equal(effectStatus.dataset.state, 'ready');
+});
+
+test('app rejects removed typed commands', async () => {
+  const stream = { getTracks: () => [] };
+
+  const { cameraShell, effectForm, effectInput, effectStatus, effectLayer } = await loadAppWithFakes({
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  effectInput.value = '拍照';
+  await effectForm.submit();
+  await flushAsyncEffects();
+
+  assert.equal(cameraShell.dataset.cameraSize, undefined);
+  assert.equal(effectLayer.dataset.effect, undefined);
+  assert.equal(effectLayer.children.length, 0);
+  assert.equal(effectStatus.textContent, '没有识别到可执行指令');
+  assert.equal(effectStatus.dataset.state, 'error');
 });
 
 test('app positions flower effects above a detected face from typed commands', async () => {
@@ -336,121 +384,19 @@ test('app positions flower effects above a detected face from typed commands', a
   assert.equal(effectLayer.style.values['--effect-y'], '23%');
 });
 
-test('app executes page control commands from the text command box', async () => {
-  const stream = { getTracks: () => [] };
+test('app stops hand trails when the camera stops', async () => {
+  const tracks = [{ stopped: false, stop() { this.stopped = true; } }];
+  const stream = { getTracks: () => tracks };
 
-  const {
-    cameraShell,
-    effectForm,
-    effectInput,
-    effectStatus,
-    voiceCommandText,
-    voiceCommandResult
-  } = await loadAppWithFakes({
+  const { stopButton, status, handStatus } = await loadAppWithFakes({
     async getUserMedia() {
       return stream;
     }
   });
 
-  effectInput.value = '放大摄像头';
-  await effectForm.submit();
-  await flushAsyncEffects();
+  stopButton.click();
 
-  assert.equal(cameraShell.dataset.cameraSize, 'large');
-  assert.equal(effectStatus.textContent, '摄像头画面已放大');
-  assert.equal(effectStatus.dataset.state, 'ready');
-  assert.equal(voiceCommandText.textContent, '放大摄像头');
-  assert.equal(voiceCommandResult.textContent, '摄像头画面已放大');
-});
-
-test('app executes caption voice commands for subtitles and camera size', async () => {
-  FakeSpeechRecognition.instances = [];
-  const stream = { getTracks: () => [] };
-
-  const {
-    captionStartButton,
-    captionOutput,
-    cameraShell,
-    voiceCommandText,
-    voiceCommandResult
-  } = await loadAppWithFakes({
-    async getUserMedia() {
-      return stream;
-    }
-  });
-
-  captionStartButton.click();
-  FakeSpeechRecognition.instances[0].emitResult({ transcript: '隐藏字幕', isFinal: true });
-  await flushAsyncEffects();
-
-  assert.equal(captionOutput.hidden, true);
-  assert.equal(voiceCommandText.textContent, '隐藏字幕');
-  assert.equal(voiceCommandResult.textContent, '字幕已隐藏');
-
-  FakeSpeechRecognition.instances[0].emitResult({ transcript: '显示字幕', isFinal: true });
-  await flushAsyncEffects();
-  assert.equal(captionOutput.hidden, false);
-  assert.equal(voiceCommandResult.textContent, '字幕已显示');
-
-  FakeSpeechRecognition.instances[0].emitResult({ transcript: '放大摄像头', isFinal: true });
-  await flushAsyncEffects();
-  assert.equal(cameraShell.dataset.cameraSize, 'large');
-  assert.equal(voiceCommandResult.textContent, '摄像头画面已放大');
-
-  FakeSpeechRecognition.instances[0].emitResult({ transcript: '缩小摄像头', isFinal: true });
-  await flushAsyncEffects();
-  assert.equal(cameraShell.dataset.cameraSize, 'normal');
-  assert.equal(voiceCommandResult.textContent, '摄像头画面已恢复');
-});
-
-test('app captures a snapshot from a voice command', async () => {
-  FakeSpeechRecognition.instances = [];
-  const stream = { getTracks: () => [] };
-
-  const {
-    captionStartButton,
-    snapshotPreview,
-    voiceCommandText,
-    voiceCommandResult
-  } = await loadAppWithFakes({
-    async getUserMedia() {
-      return stream;
-    }
-  });
-
-  captionStartButton.click();
-  FakeSpeechRecognition.instances[0].emitResult({ transcript: '帮我拍照', isFinal: true });
-  await flushAsyncEffects();
-
-  assert.equal(snapshotPreview.hidden, false);
-  assert.equal(snapshotPreview.src, 'data:image/png;base64,fake-snapshot');
-  assert.equal(voiceCommandText.textContent, '拍照');
-  assert.equal(voiceCommandResult.textContent, '已拍照');
-});
-
-test('app clears visual effects from a voice command', async () => {
-  FakeSpeechRecognition.instances = [];
-  const stream = { getTracks: () => [] };
-
-  const {
-    captionStartButton,
-    effectLayer,
-    voiceCommandResult
-  } = await loadAppWithFakes({
-    async getUserMedia() {
-      return stream;
-    }
-  });
-
-  captionStartButton.click();
-  FakeSpeechRecognition.instances[0].emitResult({ transcript: '下雪', isFinal: true });
-  await flushAsyncEffects();
-  assert.equal(effectLayer.dataset.effect, 'snow');
-
-  FakeSpeechRecognition.instances[0].emitResult({ transcript: '清空特效', isFinal: true });
-  await flushAsyncEffects();
-
-  assert.equal(effectLayer.children.length, 0);
-  assert.equal(effectLayer.dataset.effect, undefined);
-  assert.equal(voiceCommandResult.textContent, '特效已清空');
+  assert.equal(tracks[0].stopped, true);
+  assert.equal(status.textContent, '摄像头已停止');
+  assert.equal(handStatus.textContent, '手势识别已停止');
 });

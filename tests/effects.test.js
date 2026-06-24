@@ -68,7 +68,7 @@ test('voice effect controller shows a flower when speech contains 开花', () =>
 
   const flyingPetals = layer.children.filter((child) => child.className === 'voice-effect voice-effect--petal');
   assert.equal(flyingPetals.length, 36);
-  assert.ok(flyingPetals.every((child) => child.textContent === '✿'));
+  assert.ok(flyingPetals.every((child) => child.textContent === '*'));
 
   const vectors = flyingPetals.map(readVector);
   assert.ok(vectors.some(({ x, y }) => x < -20 && y < 2));
@@ -116,7 +116,7 @@ test('voice effect controller positions flower burst at a supplied origin', () =
   assert.equal(layer.style.values['--effect-y'], '23%');
 });
 
-test('voice effect controller shows snow when speech contains 下雪', () => {
+test('voice effect controller ignores removed snow and heart commands', () => {
   const layer = createLayer();
   const effects = createVoiceEffectController({
     layer,
@@ -129,31 +129,8 @@ test('voice effect controller shows snow when speech contains 下雪', () => {
     }
   });
 
-  const result = effects.triggerFromTranscript('现在开始下雪');
-
-  assert.equal(result, 'snow');
-  assert.equal(layer.dataset.effect, 'snow');
-  assert.equal(layer.children.length, 42);
-  assert.ok(layer.children.every((child) => child.className === 'voice-effect voice-effect--snow'));
-});
-
-test('voice effect controller shows a heart burst when speech contains 爱心', () => {
-  const layer = createLayer();
-  const effects = createVoiceEffectController({
-    layer,
-    createElement,
-    timers: {
-      setTimeout() {
-        return 1;
-      },
-      clearTimeout() {}
-    }
-  });
-
-  const result = effects.triggerFromTranscript('给我来个爱心');
-
-  assert.equal(result, 'heart');
-  assert.equal(layer.dataset.effect, 'heart');
-  assert.ok(layer.children.some((child) => child.className === 'voice-effect-impact voice-effect-impact--heart'));
-  assert.ok(layer.children.filter((child) => child.className === 'voice-effect voice-effect--heart').length >= 10);
+  assert.equal(effects.triggerFromTranscript('下雪'), false);
+  assert.equal(effects.triggerFromTranscript('爱心'), false);
+  assert.equal(layer.dataset.effect, undefined);
+  assert.equal(layer.children.length, 0);
 });

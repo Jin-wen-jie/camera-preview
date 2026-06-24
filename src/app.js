@@ -1,10 +1,10 @@
 import { startCamera, stopCamera } from './camera.js';
 import { createCaptionController } from './captions.js?v=replace-latest-2';
-import { createVoiceEffectController } from './effects.js?v=head-anchor';
+import { createVoiceEffectController } from './effects.js?v=index-finger-trail';
 import { createFaceAnchorDetector } from './face.js?v=robust-face';
-import { parseVoiceCommand } from './voice-commands.js?v=voice-command-mode';
+import { createIndexFingerTrailController } from './hands.js?v=index-finger-trail';
+import { parseVoiceCommand } from './voice-commands.js?v=index-finger-trail';
 
-const cameraShell = document.querySelector('[data-camera-shell]');
 const video = document.querySelector('[data-camera-preview]');
 const status = document.querySelector('[data-camera-status]');
 const startButton = document.querySelector('[data-camera-start]');
@@ -19,15 +19,15 @@ const effectStatus = document.querySelector('[data-effect-status]');
 const effectLayer = document.querySelector('[data-voice-effects]');
 const voiceCommandText = document.querySelector('[data-voice-command-text]');
 const voiceCommandResult = document.querySelector('[data-voice-command-result]');
-const snapshotPreview = document.querySelector('[data-snapshot-preview]');
+const handTrailCanvas = document.querySelector('[data-hand-trails]');
+const handStatus = document.querySelector('[data-hand-status]');
 const createElement = document.createElement.bind(document);
 
 let currentStream = null;
 let captionController = null;
+let handTrailController = null;
 const effectLabels = {
-  flower: '开花',
-  snow: '下雪',
-  heart: '爱心'
+  flower: '开花'
 };
 const voiceEffects = createVoiceEffectController({
   layer: effectLayer,
@@ -93,72 +93,15 @@ async function triggerVisualEffect(prompt) {
   return voiceEffects.triggerFromTranscript(prompt, { origin });
 }
 
-function captureSnapshot() {
-  const width = video.videoWidth || video.clientWidth || 1280;
-  const height = video.videoHeight || video.clientHeight || 720;
-  const canvas = createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-
-  const context = canvas.getContext?.('2d');
-  if (!context) return false;
-
-  context.drawImage(video, 0, 0, width, height);
-  const dataUrl = canvas.toDataURL('image/png');
-
-  if (snapshotPreview) {
-    snapshotPreview.src = dataUrl;
-    snapshotPreview.hidden = false;
-  }
-
-  return true;
-}
-
 async function executeVoiceCommand(command, transcript) {
   if (command.type === 'effect') {
     const effect = await triggerVisualEffect(transcript);
     if (!effect) {
-      return { text: '没有识别到可执行特效', state: 'error' };
+      return { text: '没有识别到可执行指令', state: 'error' };
     }
 
     setEffectStatus(getEffectReadyText(effect), 'ready');
     return { text: `已执行：${command.label}`, state: 'ready' };
-  }
-
-  if (command.type === 'clear-effects') {
-    voiceEffects.clear();
-    return { text: '特效已清空', state: 'ready' };
-  }
-
-  if (command.type === 'hide-captions') {
-    captionOutput.hidden = true;
-    return { text: '字幕已隐藏', state: 'ready' };
-  }
-
-  if (command.type === 'show-captions') {
-    captionOutput.hidden = false;
-    return { text: '字幕已显示', state: 'ready' };
-  }
-
-  if (command.type === 'camera-large') {
-    if (cameraShell?.dataset) {
-      cameraShell.dataset.cameraSize = 'large';
-    }
-    return { text: '摄像头画面已放大', state: 'ready' };
-  }
-
-  if (command.type === 'camera-normal') {
-    if (cameraShell?.dataset) {
-      cameraShell.dataset.cameraSize = 'normal';
-    }
-    return { text: '摄像头画面已恢复', state: 'ready' };
-  }
-
-  if (command.type === 'snapshot') {
-    const didCapture = captureSnapshot();
-    return didCapture
-      ? { text: '已拍照', state: 'ready' }
-      : { text: '当前浏览器无法拍照', state: 'error' };
   }
 
   return { text: '没有识别到可执行指令', state: 'error' };
@@ -176,21 +119,16 @@ async function handleVoiceTranscript(transcript) {
   setVoiceCommandStatus(command.label, result.text, result.state);
 }
 
-async function executeTextCommand(prompt) {
-  const command = parseVoiceCommand(prompt);
-  if (command) {
-    setVoiceCommandStatus(command.label, '执行中...', 'loading');
-    const result = await executeVoiceCommand(command, prompt);
-    setVoiceCommandStatus(command.label, result.text, result.state);
-    setEffectStatus(result.text, result.state);
-    return true;
+function ensureHandTrailController() {
+  if (!handTrailController) {
+    handTrailController = createIndexFingerTrailController({
+      video,
+      canvas: handTrailCanvas,
+      status: handStatus
+    });
   }
 
-  const effect = await triggerVisualEffect(prompt);
-  if (!effect) return false;
-
-  setEffectStatus(getEffectReadyText(effect), 'ready');
-  return true;
+  return handTrailController;
 }
 
 async function handleStart() {
@@ -202,6 +140,7 @@ async function handleStart() {
       video,
       status
     });
+    ensureHandTrailController().start();
     setControls(true);
   } catch {
     currentStream = null;
@@ -212,6 +151,7 @@ async function handleStart() {
 function handleStop() {
   stopCamera({ stream: currentStream, video, status });
   currentStream = null;
+  handTrailController?.stop();
   setControls(false);
 }
 
@@ -220,15 +160,18 @@ async function handleEffectSubmit(event) {
 
   const prompt = effectInput.value.trim();
   if (!prompt) {
-    setEffectStatus('请输入文字指令', 'error');
+    setEffectStatus('请输入开花指令', 'error');
     return;
   }
 
-  const didExecute = await executeTextCommand(prompt);
-  if (!didExecute) {
+  const command = parseVoiceCommand(prompt);
+  if (!command) {
     setEffectStatus('没有识别到可执行指令', 'error');
     return;
   }
+
+  const result = await executeVoiceCommand(command, prompt);
+  setVoiceCommandStatus(command.label, result.text, result.state);
 }
 
 startButton.addEventListener('click', handleStart);
@@ -254,6 +197,7 @@ window.addEventListener('beforeunload', () => {
   if (currentStream) {
     stopCamera({ stream: currentStream, video, status: null });
   }
+  handTrailController?.stop();
   voiceEffects.clear();
   captionController.stop();
 });

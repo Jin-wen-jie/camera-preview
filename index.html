@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>摄像头预览</title>
-    <link rel="stylesheet" href="./styles.css?v=voice-command-mode">
+    <title>摄像头手势轨迹</title>
+    <link rel="stylesheet" href="./styles.css?v=index-finger-trail">
   </head>
   <body>
     <main class="camera-shell" data-camera-shell aria-labelledby="page-title">
@@ -16,12 +16,16 @@
             autoplay
             muted
             playsinline
-            aria-label="笔记本摄像头画面"
+            aria-label="摄像头画面"
           ></video>
           <div class="preview-placeholder" aria-hidden="true">
             <span></span>
           </div>
+          <canvas class="hand-trail-layer" data-hand-trails aria-hidden="true"></canvas>
           <div class="voice-effect-layer" data-voice-effects aria-hidden="true"></div>
+          <div class="hand-status" data-hand-status data-state="idle" role="status" aria-live="polite">
+            等待五指张开开始
+          </div>
           <div class="caption-overlay" data-live-caption data-state="idle" aria-live="polite">
             字幕将在这里显示
           </div>
@@ -30,8 +34,8 @@
 
       <aside class="control-panel">
         <p class="eyebrow">Local camera</p>
-        <h1 id="page-title">笔记本摄像头预览</h1>
-        <p class="intro">点击开启后，浏览器会请求摄像头权限。授权成功后，画面会直接显示在左侧。</p>
+        <h1 id="page-title">手指轨迹识别</h1>
+        <p class="intro">打开摄像头后，五指张开可开始或暂停记录；记录中只保留食指指尖的滑动轨迹，轨迹会在 5 秒后淡出。</p>
 
         <div class="status-row" data-camera-status data-state="idle" role="status" aria-live="polite">
           摄像头未开启
@@ -60,14 +64,14 @@
               data-effect-input
               type="text"
               autocomplete="off"
-              placeholder="在我头上放一朵花"
+              placeholder="在我头上开花"
             >
             <button class="primary-button" type="submit">执行</button>
           </div>
         </form>
 
         <div class="status-row effect-status" data-effect-status data-state="idle" role="status" aria-live="polite">
-          等待文字指令
+          等待开花指令
         </div>
 
         <div class="voice-command-panel" aria-label="voice command status">
@@ -77,20 +81,14 @@
           </div>
           <div class="voice-command-row">
             <span>执行结果</span>
-            <strong data-voice-command-result>开启字幕后可语音控制页面</strong>
+            <strong data-voice-command-result>开启字幕后可语音触发开花</strong>
           </div>
-          <img
-            class="snapshot-preview"
-            data-snapshot-preview
-            alt="最近拍照预览"
-            hidden
-          >
         </div>
 
         <p class="hint">如果看不到权限弹窗，请确认正在通过 localhost 或 HTTPS 打开页面。</p>
       </aside>
     </main>
 
-    <script type="module" src="./src/app.js?v=text-and-voice-commands"></script>
+    <script type="module" src="./src/app.js?v=index-finger-trail"></script>
   </body>
 </html>

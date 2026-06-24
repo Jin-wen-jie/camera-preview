@@ -23,7 +23,16 @@ test('live captions are overlaid at the bottom of the camera preview', async () 
   assert.match(css, /\.caption-overlay\s*\{[^}]*z-index:\s*3/s);
 });
 
-test('voice effects are layered over the camera preview', async () => {
+test('hand trails are layered over the camera preview', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.hand-trail-layer\s*\{[^}]*position:\s*absolute/s);
+  assert.match(css, /\.hand-trail-layer\s*\{[^}]*inset:\s*0/s);
+  assert.match(css, /\.hand-trail-layer\s*\{[^}]*z-index:\s*2/s);
+  assert.match(css, /\.hand-status\s*\{[^}]*position:\s*absolute/s);
+});
+
+test('voice effects are layered over the camera preview with flower animation only', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(css, /\.voice-effect-layer\s*\{[^}]*position:\s*absolute/s);
@@ -32,7 +41,8 @@ test('voice effects are layered over the camera preview', async () => {
   assert.match(css, /\.voice-effect--flower\s*\{[^}]*top:\s*var\(--effect-y,\s*50%\)/s);
   assert.match(css, /\.voice-effect-impact\s*\{[^}]*animation:\s*impact-ring/s);
   assert.match(css, /\.voice-effect--petal\s*\{[^}]*animation:\s*petal-burst/s);
-  assert.match(css, /\.voice-effect-layer\[data-effect="snow"\]\s*\{[^}]*background:/s);
+  assert.doesNotMatch(css, /data-effect="snow"/);
+  assert.doesNotMatch(css, /voice-effect--heart/);
 });
 
 test('typed effect command controls are arranged as a compact input row', async () => {
@@ -42,16 +52,11 @@ test('typed effect command controls are arranged as a compact input row', async 
   assert.match(css, /\.effect-command-input\s*\{[^}]*min-height:\s*46px/s);
 });
 
-test('voice command status and snapshot preview have stable panel styles', async () => {
+test('voice command status panel has stable row styles', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(css, /\.voice-command-panel\s*\{[^}]*display:\s*grid/s);
   assert.match(css, /\.voice-command-row\s*\{[^}]*grid-template-columns:\s*auto\s*minmax\(0,\s*1fr\)/s);
-  assert.match(css, /\.snapshot-preview\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9/s);
-});
-
-test('voice command can enlarge the camera area', async () => {
-  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
-
-  assert.match(css, /\.camera-shell\[data-camera-size="large"\]\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*2\.35fr\)\s*minmax\(260px,\s*0\.45fr\)/s);
+  assert.doesNotMatch(css, /\.snapshot-preview\s*\{/);
+  assert.doesNotMatch(css, /data-camera-size/);
 });
