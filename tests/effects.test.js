@@ -31,6 +31,13 @@ function createLayer() {
   };
 }
 
+function readVector(child) {
+  return {
+    x: Number(child.style.values['--x'].replace('vw', '')),
+    y: Number(child.style.values['--y'].replace('vh', ''))
+  };
+}
+
 test('voice effect controller shows a flower when speech contains 开花', () => {
   const layer = createLayer();
   const effects = createVoiceEffectController({
@@ -54,8 +61,15 @@ test('voice effect controller shows a flower when speech contains 开花', () =>
   assert.ok(layer.children.length >= 20);
 
   const flyingPetals = layer.children.filter((child) => child.className === 'voice-effect voice-effect--petal');
-  assert.ok(flyingPetals.length > 0);
-  assert.ok(flyingPetals.every((child) => child.textContent === '♥'));
+  assert.equal(flyingPetals.length, 36);
+  assert.ok(flyingPetals.every((child) => child.textContent === '✿'));
+
+  const vectors = flyingPetals.map(readVector);
+  assert.ok(vectors.some(({ x, y }) => x < -20 && y < 2));
+  assert.ok(vectors.some(({ x, y }) => x > 20 && y < 2));
+  assert.ok(vectors.some(({ y }) => y < -12));
+  assert.ok(vectors.some(({ x, y }) => Math.abs(x) < 1 && y > 22));
+  assert.ok(vectors.some(({ x, y }) => Math.abs(x) < 1 && y > -8 && y < 0));
 });
 
 test('voice effect controller understands natural flower commands', () => {

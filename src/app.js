@@ -1,6 +1,6 @@
 import { startCamera, stopCamera } from './camera.js';
 import { createCaptionController } from './captions.js';
-import { createVoiceEffectController } from './effects.js';
+import { createVoiceEffectController } from './effects.js?v=heart-outline';
 
 const video = document.querySelector('[data-camera-preview]');
 const status = document.querySelector('[data-camera-status]');

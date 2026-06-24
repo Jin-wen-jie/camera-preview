@@ -37,6 +37,21 @@ function setBurstVector(element, index, total, radius) {
   element.style?.setProperty?.('--r', `${Math.round((angle * 180) / Math.PI)}deg`);
 }
 
+function setHeartOutlineVector(element, index, total) {
+  const angle = (Math.PI * 2 * index) / total;
+  const x = 16 * Math.sin(angle) ** 3;
+  const y = (
+    13 * Math.cos(angle)
+    - 5 * Math.cos(2 * angle)
+    - 2 * Math.cos(3 * angle)
+    - Math.cos(4 * angle)
+  );
+
+  element.style?.setProperty?.('--x', `${(x * 1.55).toFixed(2)}vw`);
+  element.style?.setProperty?.('--y', `${((-y * 1.35) + 2).toFixed(2)}vh`);
+  element.style?.setProperty?.('--r', `${Math.round((angle * 180) / Math.PI)}deg`);
+}
+
 export function createVoiceEffectController({
   layer,
   createElement = (tagName) => document.createElement(tagName),
@@ -92,13 +107,13 @@ export function createVoiceEffectController({
     appendImpact('flower');
     appendSingleEffect(trigger);
 
-    const petalCount = 22;
+    const petalCount = 36;
     for (let index = 0; index < petalCount; index += 1) {
       const element = createElement('span');
       element.className = 'voice-effect voice-effect--petal';
-      element.textContent = '♥';
+      element.textContent = '✿';
       setStyleIndex(element, index);
-      setBurstVector(element, index, petalCount, 28);
+      setHeartOutlineVector(element, index, petalCount);
       layer.append(element);
     }
   }
