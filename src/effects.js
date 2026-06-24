@@ -52,6 +52,11 @@ function setHeartOutlineVector(element, index, total) {
   element.style?.setProperty?.('--r', `${Math.round((angle * 180) / Math.PI)}deg`);
 }
 
+function setEffectOrigin(layer, origin = { x: 50, y: 50 }) {
+  layer?.style?.setProperty?.('--effect-x', `${origin.x}%`);
+  layer?.style?.setProperty?.('--effect-y', `${origin.y}%`);
+}
+
 export function createVoiceEffectController({
   layer,
   createElement = (tagName) => document.createElement(tagName),
@@ -132,8 +137,16 @@ export function createVoiceEffectController({
     }
   }
 
-  function show(trigger) {
+  function findTrigger(text) {
+    const normalizedText = normalizeTranscript(text);
+    return TRIGGERS.find(({ phrases }) => (
+      phrases.some((phrase) => normalizedText.includes(phrase))
+    ));
+  }
+
+  function show(trigger, origin) {
     clear();
+    setEffectOrigin(layer, origin);
     if (layer?.dataset) {
       layer.dataset.effect = trigger.type;
     }
@@ -154,12 +167,12 @@ export function createVoiceEffectController({
 
   return {
     clear,
-    triggerFromTranscript(text) {
-      const normalizedText = normalizeTranscript(text);
-      const trigger = TRIGGERS.find(({ phrases }) => (
-        phrases.some((phrase) => normalizedText.includes(phrase))
-      ));
-      return trigger ? show(trigger) : false;
+    getEffectType(text) {
+      return findTrigger(text)?.type || false;
+    },
+    triggerFromTranscript(text, { origin } = {}) {
+      const trigger = findTrigger(text);
+      return trigger ? show(trigger, origin) : false;
     }
   };
 }

@@ -22,6 +22,12 @@ function createLayer() {
   return {
     children: [],
     dataset: {},
+    style: {
+      values: {},
+      setProperty(name, value) {
+        this.values[name] = value;
+      }
+    },
     append(...children) {
       this.children.push(...children);
     },
@@ -89,6 +95,25 @@ test('voice effect controller understands natural flower commands', () => {
 
   assert.equal(result, 'flower');
   assert.equal(layer.dataset.effect, 'flower');
+});
+
+test('voice effect controller positions flower burst at a supplied origin', () => {
+  const layer = createLayer();
+  const effects = createVoiceEffectController({
+    layer,
+    createElement,
+    timers: {
+      setTimeout() {
+        return 1;
+      },
+      clearTimeout() {}
+    }
+  });
+
+  effects.triggerFromTranscript('开花', { origin: { x: 70, y: 23 } });
+
+  assert.equal(layer.style.values['--effect-x'], '70%');
+  assert.equal(layer.style.values['--effect-y'], '23%');
 });
 
 test('voice effect controller shows snow when speech contains 下雪', () => {

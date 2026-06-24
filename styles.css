@@ -120,6 +120,8 @@ video {
   position: absolute;
   inset: 0;
   z-index: 4;
+  --effect-x: 50%;
+  --effect-y: 50%;
   pointer-events: none;
   overflow: hidden;
 }
@@ -141,8 +143,8 @@ video {
 
 .voice-effect-impact {
   position: absolute;
-  top: 24%;
-  left: 50%;
+  top: var(--effect-y, 50%);
+  left: var(--effect-x, 50%);
   width: clamp(180px, 30vw, 420px);
   aspect-ratio: 1;
   border: 2px solid rgba(255, 111, 190, 0.68);
@@ -155,7 +157,6 @@ video {
 }
 
 .voice-effect-impact--heart {
-  top: 30%;
   border-color: rgba(255, 51, 95, 0.7);
   box-shadow:
     0 0 42px rgba(255, 51, 95, 0.46),
@@ -163,8 +164,8 @@ video {
 }
 
 .voice-effect--flower {
-  top: 12%;
-  left: 50%;
+  top: var(--effect-y, 50%);
+  left: var(--effect-x, 50%);
   color: #ff4fa3;
   font-size: clamp(5.5rem, 13vw, 10rem);
   transform: translateX(-50%);
@@ -173,8 +174,8 @@ video {
 }
 
 .voice-effect--petal {
-  top: 20%;
-  left: 50%;
+  top: var(--effect-y, 50%);
+  left: var(--effect-x, 50%);
   color: #ff75b7;
   font-size: clamp(1.2rem, 3.2vw, 2.4rem);
   transform: translate(-50%, -50%);
@@ -184,8 +185,8 @@ video {
 }
 
 .voice-effect--heart {
-  top: 24%;
-  left: 50%;
+  top: var(--effect-y, 50%);
+  left: var(--effect-x, 50%);
   color: #ff335f;
   font-size: clamp(2.4rem, 6vw, 5.2rem);
   transform: translate(-50%, -50%);

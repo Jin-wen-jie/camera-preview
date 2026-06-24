@@ -21,11 +21,16 @@ function createForm() {
       listeners[type] = listener;
     },
     submit() {
-      listeners.submit?.({
+      return listeners.submit?.({
         preventDefault() {}
       });
     }
   };
+}
+
+async function flushAsyncEffects() {
+  await Promise.resolve();
+  await Promise.resolve();
 }
 
 class FakeSpeechRecognition {
@@ -58,8 +63,10 @@ class FakeSpeechRecognition {
   }
 }
 
-async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRecognition }) {
+async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRecognition, FaceDetector }) {
   const video = {
+    videoWidth: 1000,
+    videoHeight: 500,
     srcObject: null,
     async play() {}
   };
@@ -72,6 +79,12 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
   const effectLayer = {
     children: [],
     dataset: {},
+    style: {
+      values: {},
+      setProperty(name, value) {
+        this.values[name] = value;
+      }
+    },
     append(...children) {
       this.children.push(...children);
     },
@@ -123,6 +136,7 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
   globalThis.window = {
     SpeechRecognition,
     webkitSpeechRecognition: SpeechRecognition,
+    FaceDetector,
     addEventListener(type, listener) {
       if (type === 'beforeunload') {
         beforeUnloadListeners.push(listener);
@@ -224,6 +238,7 @@ test('app triggers visual effects from recognized speech', async () => {
 
   captionStartButton.click();
   FakeSpeechRecognition.instances[0].emitResult({ transcript: '开花', isFinal: false });
+  await flushAsyncEffects();
 
   assert.equal(effectLayer.dataset.effect, 'flower');
   assert.ok(effectLayer.children.length >= 20);
@@ -241,10 +256,38 @@ test('app triggers visual effects from typed commands', async () => {
   });
 
   effectInput.value = '让画面下雪';
-  effectForm.submit();
+  await effectForm.submit();
 
   assert.equal(effectLayer.dataset.effect, 'snow');
   assert.equal(effectLayer.children.length, 42);
   assert.equal(effectStatus.textContent, '已执行：下雪');
   assert.equal(effectStatus.dataset.state, 'ready');
+});
+
+test('app positions flower effects above a detected face from typed commands', async () => {
+  class FakeFaceDetector {
+    async detect() {
+      return [
+        {
+          boundingBox: { x: 200, y: 150, width: 200, height: 180 }
+        }
+      ];
+    }
+  }
+
+  const stream = { getTracks: () => [] };
+
+  const { effectForm, effectInput, effectLayer } = await loadAppWithFakes({
+    FaceDetector: FakeFaceDetector,
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  effectInput.value = '在我头上放一朵花';
+  await effectForm.submit();
+
+  assert.equal(effectLayer.dataset.effect, 'flower');
+  assert.equal(effectLayer.style.values['--effect-x'], '70%');
+  assert.equal(effectLayer.style.values['--effect-y'], '23%');
 });

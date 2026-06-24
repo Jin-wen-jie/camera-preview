@@ -1,6 +1,7 @@
 import { startCamera, stopCamera } from './camera.js';
 import { createCaptionController } from './captions.js';
-import { createVoiceEffectController } from './effects.js?v=heart-outline';
+import { createVoiceEffectController } from './effects.js?v=head-anchor';
+import { createFaceAnchorDetector } from './face.js?v=head-anchor';
 
 const video = document.querySelector('[data-camera-preview]');
 const status = document.querySelector('[data-camera-status]');
@@ -26,6 +27,10 @@ const voiceEffects = createVoiceEffectController({
   layer: effectLayer,
   createElement: document.createElement.bind(document)
 });
+const faceAnchorDetector = createFaceAnchorDetector({
+  FaceDetector: window.FaceDetector,
+  video
+});
 
 function setControls(isRunning) {
   startButton.disabled = isRunning;
@@ -41,6 +46,20 @@ function setCaptionControls(isRunning) {
 function setEffectStatus(text, state) {
   effectStatus.textContent = text;
   effectStatus.dataset.state = state;
+}
+
+async function getEffectOrigin(effectType) {
+  return effectType === 'flower'
+    ? faceAnchorDetector.detect()
+    : undefined;
+}
+
+async function triggerVisualEffect(prompt) {
+  const effectType = voiceEffects.getEffectType(prompt);
+  if (!effectType) return false;
+
+  const origin = await getEffectOrigin(effectType);
+  return voiceEffects.triggerFromTranscript(prompt, { origin });
 }
 
 async function handleStart() {
@@ -65,7 +84,7 @@ function handleStop() {
   setControls(false);
 }
 
-function handleEffectSubmit(event) {
+async function handleEffectSubmit(event) {
   event.preventDefault();
 
   const prompt = effectInput.value.trim();
@@ -74,7 +93,7 @@ function handleEffectSubmit(event) {
     return;
   }
 
-  const effect = voiceEffects.triggerFromTranscript(prompt);
+  const effect = await triggerVisualEffect(prompt);
   if (!effect) {
     setEffectStatus('没有识别到可执行指令', 'error');
     return;
@@ -91,7 +110,7 @@ captionController = createCaptionController({
   output: captionOutput,
   status: captionStatus,
   onTranscript: (_visibleTranscript, recentTranscript) => {
-    voiceEffects.triggerFromTranscript(recentTranscript);
+    void triggerVisualEffect(recentTranscript);
   },
   onStateChange: setCaptionControls
 });
