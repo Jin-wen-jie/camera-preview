@@ -38,9 +38,14 @@ function createLayer() {
 }
 
 function readVector(child) {
+  const x = child.style.values['--x'].match(/^(-?\d+(?:\.\d+)?)([a-z%]+)$/);
+  const y = child.style.values['--y'].match(/^(-?\d+(?:\.\d+)?)([a-z%]+)$/);
+
   return {
-    x: Number(child.style.values['--x'].replace('vw', '')),
-    y: Number(child.style.values['--y'].replace('vh', ''))
+    x: Number(x?.[1]),
+    y: Number(y?.[1]),
+    xUnit: x?.[2],
+    yUnit: y?.[2]
   };
 }
 
@@ -62,15 +67,25 @@ test('voice effect controller shows a flower when speech contains 开花', () =>
   assert.equal(result, 'flower');
   assert.equal(layer.dataset.effect, 'flower');
   assert.ok(layer.children.some((child) => child.className === 'voice-effect-impact'));
-  assert.ok(layer.children.some((child) => child.className === 'voice-effect voice-effect--flower'));
+  const faceFlower = layer.children.find((child) => child.className === 'voice-effect voice-effect--flower');
+  assert.ok(faceFlower);
+  assert.equal(faceFlower.textContent, '🌸');
   assert.ok(layer.children.some((child) => child.className === 'voice-effect voice-effect--petal'));
   assert.ok(layer.children.length >= 20);
 
   const flyingPetals = layer.children.filter((child) => child.className === 'voice-effect voice-effect--petal');
   assert.equal(flyingPetals.length, 36);
-  assert.ok(flyingPetals.every((child) => child.textContent === '*'));
+  assert.ok(flyingPetals.every((child) => child.textContent === '❤'));
 
   const vectors = flyingPetals.map(readVector);
+  assert.ok(vectors.every(({ xUnit, yUnit }) => xUnit === 'vmin' && yUnit === 'vmin'));
+
+  const xs = vectors.map(({ x }) => x);
+  const ys = vectors.map(({ y }) => y);
+  const width = Math.max(...xs) - Math.min(...xs);
+  const height = Math.max(...ys) - Math.min(...ys);
+  assert.ok(width / height < 1.2);
+
   assert.ok(vectors.some(({ x, y }) => x < -20 && y < 2));
   assert.ok(vectors.some(({ x, y }) => x > 20 && y < 2));
   assert.ok(vectors.some(({ y }) => y < -12));

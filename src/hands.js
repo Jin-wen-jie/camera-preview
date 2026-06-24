@@ -5,9 +5,6 @@ const HAND_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_lan
 const THUMB_TIP = 4;
 const INDEX_TIP = 8;
 const TRAIL_RETENTION_MS = 5000;
-const PINCH_START_RATIO = 0.56;
-const PINCH_STOP_RATIO = 0.82;
-const PINCH_HOLD_MS = 120;
 
 function setStatus(status, text, state) {
   if (!status) return;
@@ -17,24 +14,12 @@ function setStatus(status, text, state) {
   }
 }
 
-function formatRatio(value) {
-  return Number.isFinite(value) ? value.toFixed(2) : '--';
-}
-
 function hasPoint(landmarks, index) {
   return Number.isFinite(landmarks?.[index]?.x) && Number.isFinite(landmarks?.[index]?.y);
 }
 
 function getDistance(first, second) {
   return Math.hypot(first.x - second.x, first.y - second.y);
-}
-
-function getPalmWidth(landmarks) {
-  if (!hasPoint(landmarks, 5) || !hasPoint(landmarks, 17)) {
-    return null;
-  }
-
-  return getDistance(landmarks[5], landmarks[17]);
 }
 
 function isFingerExtended(landmarks, tip, pip) {
@@ -78,21 +63,49 @@ export function getIndexFingerTip(landmarks) {
   };
 }
 
-export function getFingerPinchRatio(landmarks) {
-  if (!hasPoint(landmarks, THUMB_TIP) || !hasPoint(landmarks, INDEX_TIP)) {
-    return Infinity;
-  }
-
-  const palmWidth = getPalmWidth(landmarks);
-  if (!palmWidth) {
-    return Infinity;
-  }
-
-  return getDistance(landmarks[THUMB_TIP], landmarks[INDEX_TIP]) / palmWidth;
+export function isIndexFingerExtended(landmarks) {
+  return Array.isArray(landmarks)
+    && landmarks.length >= 21
+    && isFingerExtended(landmarks, 8, 6)
+    && !isFingerExtended(landmarks, 12, 10)
+    && !isFingerExtended(landmarks, 16, 14)
+    && !isFingerExtended(landmarks, 20, 18)
+    && !isOpenPalm(landmarks);
 }
 
-export function isFingerPinched(landmarks, threshold = PINCH_START_RATIO) {
-  return getFingerPinchRatio(landmarks) <= threshold;
+export function getNearestHandToCenter(hands) {
+  if (!Array.isArray(hands) || !hands.length) {
+    return null;
+  }
+
+  const center = { x: 0.5, y: 0.5 };
+  let nearestHand = null;
+  let nearestDistance = Infinity;
+
+  for (const hand of hands) {
+    const tip = getIndexFingerTip(hand);
+    if (!tip) continue;
+
+    const distance = getDistance(tip, center);
+    if (distance < nearestDistance) {
+      nearestHand = hand;
+      nearestDistance = distance;
+    }
+  }
+
+  return nearestHand;
+}
+
+function resolveActiveHand(landmarks) {
+  if (!Array.isArray(landmarks)) {
+    return null;
+  }
+
+  if (Array.isArray(landmarks[0])) {
+    return getNearestHandToCenter(landmarks);
+  }
+
+  return landmarks;
 }
 
 export function pruneTrailPoints(points, timestamp, retentionMs = TRAIL_RETENTION_MS) {
@@ -108,7 +121,7 @@ export async function createMediaPipeHandLandmarker({
     baseOptions: {
       modelAssetPath: HAND_MODEL_URL
     },
-    numHands: 1,
+    numHands: 4,
     runningMode: 'VIDEO'
   });
 
@@ -134,7 +147,6 @@ export function createIndexFingerTrailController({
   let detectorPromise = null;
   let frameId = null;
   let recording = false;
-  let pinchSince = null;
   let trailPoints = [];
   let strokes = [];
   let currentStroke = null;
@@ -220,47 +232,44 @@ export function createIndexFingerTrailController({
       onWritingResult(result);
     }
     recording = false;
-    pinchSince = null;
     trailPoints = [];
     strokes = [];
     currentStroke = null;
-    updateStatus('五指张开已清屏', 'cleared');
+    updateStatus('五指张开已输出并清屏', 'cleared');
     draw(timestamp);
   }
 
-  function updateRecordingState(landmarks, timestamp) {
-    const pinchRatio = getFingerPinchRatio(landmarks);
-    if (pinchRatio <= PINCH_START_RATIO) {
-      pinchSince ??= timestamp;
-      if (!recording && timestamp - pinchSince >= PINCH_HOLD_MS) {
+  function pauseRecording() {
+    if (!recording) return;
+    recording = false;
+    currentStroke = null;
+    updateStatus('食指收回，已暂停记录', 'paused');
+  }
+
+  function updateRecordingState(landmarks) {
+    if (isIndexFingerExtended(landmarks)) {
+      if (!recording) {
         recording = true;
-        updateStatus(`记录中 ratio=${formatRatio(pinchRatio)}`, 'recording');
+        updateStatus('食指记录中', 'recording');
       }
       return;
     }
 
-    if (pinchRatio >= PINCH_STOP_RATIO) {
-      pinchSince = null;
-      if (recording) {
-        recording = false;
-        currentStroke = null;
-        updateStatus(`分开已暂停 ratio=${formatRatio(pinchRatio)}`, 'paused');
-      }
-    } else if (!recording) {
-      updateStatus(`靠近一点 ratio=${formatRatio(pinchRatio)}`, 'waiting');
-    }
+    pauseRecording();
   }
 
   function processLandmarks(landmarks, timestamp = now()) {
-    if (isOpenPalm(landmarks)) {
+    const activeHand = resolveActiveHand(landmarks);
+
+    if (isOpenPalm(activeHand)) {
       clearTrail(timestamp);
       return;
     }
 
-    updateRecordingState(landmarks, timestamp);
+    updateRecordingState(activeHand);
 
     if (recording) {
-      addIndexPoint(landmarks, timestamp);
+      addIndexPoint(activeHand, timestamp);
     }
 
     trailPoints = pruneTrailPoints(trailPoints, timestamp);
@@ -274,7 +283,7 @@ export function createIndexFingerTrailController({
       detectorPromise = createHandLandmarker()
         .then((createdDetector) => {
           detector = createdDetector;
-          updateStatus('捏合开始记录', 'waiting');
+          updateStatus('伸出食指开始记录', 'waiting');
           return detector;
         })
         .catch(() => {
@@ -292,7 +301,7 @@ export function createIndexFingerTrailController({
     if (activeDetector && video?.videoWidth && video.currentTime !== lastVideoTime) {
       lastVideoTime = video.currentTime;
       const hands = activeDetector.detect(video, timestamp);
-      processLandmarks(hands?.[0] || null, timestamp);
+      processLandmarks(hands || null, timestamp);
     } else {
       draw(timestamp);
     }
@@ -304,7 +313,7 @@ export function createIndexFingerTrailController({
 
   return {
     start() {
-      updateStatus('捏合开始记录', 'waiting');
+      updateStatus('伸出食指开始记录', 'waiting');
       if (requestAnimationFrame && frameId === null) {
         frameId = requestAnimationFrame(tick);
       }
@@ -315,7 +324,6 @@ export function createIndexFingerTrailController({
       }
       frameId = null;
       recording = false;
-      pinchSince = null;
       trailPoints = [];
       strokes = [];
       currentStroke = null;

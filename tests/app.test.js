@@ -271,7 +271,7 @@ test('app automatically starts the camera and hand trail status when the page lo
   assert.equal(startButton.disabled, true);
   assert.equal(stopButton.disabled, false);
   assert.equal(status.textContent, '摄像头已开启');
-  assert.equal(handStatus.textContent, '捏合开始记录');
+  assert.equal(handStatus.textContent, '伸出食指开始记录');
 });
 
 test('app keeps the start button available when automatic startup fails', async () => {

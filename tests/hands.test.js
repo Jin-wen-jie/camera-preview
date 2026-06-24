@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createIndexFingerTrailController,
-  getFingerPinchRatio,
   getIndexFingerTip,
-  isFingerPinched,
+  getNearestHandToCenter,
+  isIndexFingerExtended,
   isOpenPalm,
   pruneTrailPoints
 } from '../src/hands.js';
@@ -39,34 +39,23 @@ function openPalmLandmarks() {
   return points;
 }
 
-function pinchedLandmarks() {
+function indexOnlyLandmarks(x = 0.42, y = 0.2) {
   const points = openPalmLandmarks();
-  points[4] = landmark(0.42, 0.22);
-  points[8] = landmark(0.43, 0.21);
-  points[12] = landmark(0.50, 0.46);
-  points[16] = landmark(0.58, 0.52);
-  points[20] = landmark(0.66, 0.58);
-  return points;
-}
-
-function separatedLandmarks() {
-  const points = pinchedLandmarks();
-  points[4] = landmark(0.24, 0.42);
-  points[8] = landmark(0.48, 0.24);
-  return points;
-}
-
-function loosePinchLandmarks() {
-  const points = pinchedLandmarks();
-  points[4] = landmark(0.34, 0.28);
-  points[8] = landmark(0.46, 0.24);
-  return points;
-}
-
-function pinchedAt(x, y) {
-  const points = pinchedLandmarks();
-  points[4] = landmark(x - 0.01, y + 0.01);
+  points[4] = landmark(0.46, 0.74);
   points[8] = landmark(x, y);
+  points[12] = landmark(0.50, 0.62);
+  points[16] = landmark(0.58, 0.64);
+  points[20] = landmark(0.66, 0.66);
+  return points;
+}
+
+function fistLandmarks() {
+  const points = openPalmLandmarks();
+  points[4] = landmark(0.48, 0.76);
+  points[8] = landmark(0.42, 0.62);
+  points[12] = landmark(0.50, 0.62);
+  points[16] = landmark(0.58, 0.64);
+  points[20] = landmark(0.66, 0.66);
   return points;
 }
 
@@ -94,22 +83,22 @@ test('isOpenPalm returns true when all five fingers are extended', () => {
   assert.equal(isOpenPalm(openPalmLandmarks()), true);
 });
 
-test('isOpenPalm returns false when the index finger is folded', () => {
-  const points = openPalmLandmarks();
-  points[8] = landmark(0.42, 0.62);
-
-  assert.equal(isOpenPalm(points), false);
+test('isOpenPalm returns false when only the index finger is extended', () => {
+  assert.equal(isOpenPalm(indexOnlyLandmarks()), false);
 });
 
-test('pinch ratio is normalized by palm width', () => {
-  assert.ok(getFingerPinchRatio(pinchedLandmarks()) < 0.18);
-  assert.ok(getFingerPinchRatio(separatedLandmarks()) > 0.34);
+test('isIndexFingerExtended detects index-only writing pose', () => {
+  assert.equal(isIndexFingerExtended(indexOnlyLandmarks()), true);
+  assert.equal(isIndexFingerExtended(fistLandmarks()), false);
+  assert.equal(isIndexFingerExtended(openPalmLandmarks()), false);
 });
 
-test('isFingerPinched uses normalized thumb-index distance', () => {
-  assert.equal(isFingerPinched(pinchedLandmarks()), true);
-  assert.equal(isFingerPinched(loosePinchLandmarks()), true);
-  assert.equal(isFingerPinched(separatedLandmarks()), false);
+test('getNearestHandToCenter picks the hand whose index fingertip is closest to screen center', () => {
+  const leftHand = indexOnlyLandmarks(0.12, 0.20);
+  const centerHand = indexOnlyLandmarks(0.52, 0.48);
+  const rightHand = indexOnlyLandmarks(0.86, 0.20);
+
+  assert.equal(getNearestHandToCenter([leftHand, centerHand, rightHand]), centerHand);
 });
 
 test('getIndexFingerTip returns normalized index fingertip coordinates', () => {
@@ -129,7 +118,7 @@ test('pruneTrailPoints removes points older than the retention window', () => {
   ]);
 });
 
-test('controller records while pinched and pauses when fingers separate', () => {
+test('controller records while the index finger is extended and pauses when it folds', () => {
   const states = [];
   const controller = createIndexFingerTrailController({
     video: { videoWidth: 640, videoHeight: 480 },
@@ -142,20 +131,18 @@ test('controller records while pinched and pauses when fingers separate', () => 
     now: () => 0
   });
 
-  controller.processLandmarks(pinchedLandmarks(), 1000);
-  assert.equal(controller.isRecording(), false);
-  controller.processLandmarks(pinchedLandmarks(), 1150);
+  controller.processLandmarks(indexOnlyLandmarks(0.40, 0.30), 1000);
   assert.equal(controller.isRecording(), true);
-  controller.processLandmarks(pinchedLandmarks(), 1250);
+  controller.processLandmarks(indexOnlyLandmarks(0.45, 0.34), 1100);
   assert.equal(controller.getTrailPoints().length, 2);
-  controller.processLandmarks(separatedLandmarks(), 1400);
+  controller.processLandmarks(fistLandmarks(), 1200);
   assert.equal(controller.isRecording(), false);
-  controller.processLandmarks(separatedLandmarks(), 1500);
+  controller.processLandmarks(fistLandmarks(), 1300);
   assert.equal(controller.getTrailPoints().length, 2);
   assert.deepEqual(states, ['recording', 'paused']);
 });
 
-test('controller starts recording for a loose real-camera pinch', () => {
+test('controller records the centered index finger when multiple hands are visible', () => {
   const controller = createIndexFingerTrailController({
     video: { videoWidth: 640, videoHeight: 480 },
     canvas: createCanvas(),
@@ -166,10 +153,15 @@ test('controller starts recording for a loose real-camera pinch', () => {
     now: () => 0
   });
 
-  controller.processLandmarks(loosePinchLandmarks(), 1000);
-  assert.equal(controller.isRecording(), false);
-  controller.processLandmarks(loosePinchLandmarks(), 1150);
+  controller.processLandmarks([
+    indexOnlyLandmarks(0.10, 0.20),
+    indexOnlyLandmarks(0.51, 0.49)
+  ], 1000);
+
   assert.equal(controller.isRecording(), true);
+  assert.deepEqual(controller.getTrailPoints(), [
+    { x: 326.4, y: 235.2, timestamp: 1000 }
+  ]);
 });
 
 test('controller clears the screen when five fingers open', () => {
@@ -185,12 +177,11 @@ test('controller clears the screen when five fingers open', () => {
     now: () => 0
   });
 
-  controller.processLandmarks(pinchedLandmarks(), 1000);
-  controller.processLandmarks(pinchedLandmarks(), 1150);
-  controller.processLandmarks(pinchedLandmarks(), 1250);
+  controller.processLandmarks(indexOnlyLandmarks(0.40, 0.30), 1000);
+  controller.processLandmarks(indexOnlyLandmarks(0.45, 0.34), 1100);
   assert.equal(controller.getTrailPoints().length, 2);
 
-  controller.processLandmarks(openPalmLandmarks(), 1400);
+  controller.processLandmarks(openPalmLandmarks(), 1200);
   assert.equal(controller.isRecording(), false);
   assert.deepEqual(controller.getTrailPoints(), []);
   assert.equal(states.at(-1), 'cleared');
@@ -206,31 +197,25 @@ test('controller emits a finger writing result when open palm finishes writing',
     requestAnimationFrame: () => 0,
     cancelAnimationFrame: () => {},
     onWritingResult: (result) => results.push(result),
-    now: () => 1800
+    now: () => 1300
   });
 
-  const firstStroke = pinchedAt(0.40, 0.30);
-  const secondPoint = pinchedAt(0.45, 0.34);
-  const secondStroke = pinchedAt(0.52, 0.38);
-
-  controller.processLandmarks(firstStroke, 1000);
-  controller.processLandmarks(firstStroke, 1150);
-  controller.processLandmarks(secondPoint, 1250);
-  controller.processLandmarks(separatedLandmarks(), 1400);
-  controller.processLandmarks(secondStroke, 1600);
-  controller.processLandmarks(secondStroke, 1750);
-  controller.processLandmarks(openPalmLandmarks(), 1800);
+  controller.processLandmarks(indexOnlyLandmarks(0.40, 0.30), 1000);
+  controller.processLandmarks(indexOnlyLandmarks(0.45, 0.34), 1100);
+  controller.processLandmarks(fistLandmarks(), 1150);
+  controller.processLandmarks(indexOnlyLandmarks(0.52, 0.38), 1200);
+  controller.processLandmarks(openPalmLandmarks(), 1300);
 
   assert.equal(results.length, 1);
   assert.equal(results[0].source, 'finger-writing');
   assert.equal(results[0].text, '');
-  assert.equal(results[0].createdAt, 1800);
+  assert.equal(results[0].createdAt, 1300);
   assert.equal(results[0].strokes.length, 2);
   assert.deepEqual(results[0].strokes[0], [
-    { x: 256, y: 144, timestamp: 1150 },
-    { x: 288, y: 163.20000000000002, timestamp: 1250 }
+    { x: 256, y: 144, timestamp: 1000 },
+    { x: 288, y: 163.20000000000002, timestamp: 1100 }
   ]);
   assert.deepEqual(results[0].strokes[1], [
-    { x: 332.8, y: 182.4, timestamp: 1750 }
+    { x: 332.8, y: 182.4, timestamp: 1200 }
   ]);
 });

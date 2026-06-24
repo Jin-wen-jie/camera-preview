@@ -2,8 +2,10 @@ const FLOWER_TRIGGER = {
   phrases: ['开花', '一朵花', '放花', '花朵', '头上花'],
   type: 'flower',
   className: 'voice-effect voice-effect--flower',
-  content: '*'
+  content: '🌸'
 };
+const HEART_PARTICLE = '❤';
+const HEART_PATH_SCALE = 1.35;
 
 function normalizeTranscript(text) {
   return String(text || '').replace(/\s+/g, '');
@@ -23,8 +25,8 @@ function setPetalVector(element, index, total) {
     - Math.cos(4 * angle)
   );
 
-  element.style?.setProperty?.('--x', `${(x * 1.55).toFixed(2)}vw`);
-  element.style?.setProperty?.('--y', `${((-y * 1.35) + 2).toFixed(2)}vh`);
+  element.style?.setProperty?.('--x', `${(x * HEART_PATH_SCALE).toFixed(2)}vmin`);
+  element.style?.setProperty?.('--y', `${((-y * HEART_PATH_SCALE) + 2).toFixed(2)}vmin`);
   element.style?.setProperty?.('--r', `${Math.round((angle * 180) / Math.PI)}deg`);
 }
 
@@ -76,7 +78,7 @@ export function createVoiceEffectController({
     for (let index = 0; index < petalCount; index += 1) {
       const element = createElement('span');
       element.className = 'voice-effect voice-effect--petal';
-      element.textContent = '*';
+      element.textContent = HEART_PARTICLE;
       setStyleIndex(element, index);
       setPetalVector(element, index, petalCount);
       layer.append(element);

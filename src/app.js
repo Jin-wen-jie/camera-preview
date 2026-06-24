@@ -1,9 +1,9 @@
 import { startCamera, stopCamera } from './camera.js';
 import { createCaptionController } from './captions.js?v=replace-latest-2';
-import { createVoiceEffectController } from './effects.js?v=index-finger-trail';
+import { createVoiceEffectController } from './effects.js?v=032af81';
 import { createFaceAnchorDetector } from './face.js?v=robust-face';
 import { dispatchFingerWritingResult } from './finger-writing-events.js?v=finger-writing-result';
-import { createIndexFingerTrailController } from './hands.js?v=index-finger-trail';
+import { createIndexFingerTrailController } from './hands.js?v=center-index-finger';
 import { parseVoiceCommand } from './voice-commands.js?v=index-finger-trail';
 
 const video = document.querySelector('[data-camera-preview]');
@@ -120,6 +120,21 @@ async function handleVoiceTranscript(transcript) {
   setVoiceCommandStatus(command.label, result.text, result.state);
 }
 
+async function handleFingerWritingResult(event) {
+  const writingResult = event?.detail || {};
+  const text = String(writingResult.text || '').trim();
+  const command = parseVoiceCommand(text);
+
+  if (!command) {
+    setVoiceCommandStatus(text || '手写结果', '没有识别到可执行指令', 'error');
+    return;
+  }
+
+  setVoiceCommandStatus(command.label, '执行中...', 'loading');
+  const result = await executeVoiceCommand(command, text);
+  setVoiceCommandStatus(command.label, result.text, result.state);
+}
+
 function ensureHandTrailController() {
   if (!handTrailController) {
     handTrailController = createIndexFingerTrailController({
@@ -179,6 +194,9 @@ async function handleEffectSubmit(event) {
 startButton.addEventListener('click', handleStart);
 stopButton.addEventListener('click', handleStop);
 effectForm.addEventListener('submit', handleEffectSubmit);
+window.addEventListener('finger-writing-result', (event) => {
+  void handleFingerWritingResult(event);
+});
 captionController = createCaptionController({
   SpeechRecognition: window.SpeechRecognition || window.webkitSpeechRecognition,
   output: captionOutput,
