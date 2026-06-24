@@ -52,6 +52,10 @@ test('voice effect controller shows a flower when speech contains 开花', () =>
   assert.ok(layer.children.some((child) => child.className === 'voice-effect voice-effect--flower'));
   assert.ok(layer.children.some((child) => child.className === 'voice-effect voice-effect--petal'));
   assert.ok(layer.children.length >= 20);
+
+  const flyingPetals = layer.children.filter((child) => child.className === 'voice-effect voice-effect--petal');
+  assert.ok(flyingPetals.length > 0);
+  assert.ok(flyingPetals.every((child) => child.textContent === '♥'));
 });
 
 test('voice effect controller understands natural flower commands', () => {

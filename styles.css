@@ -175,9 +175,10 @@ video {
 .voice-effect--petal {
   top: 20%;
   left: 50%;
-  color: #ffd1eb;
+  color: #ff75b7;
   font-size: clamp(1.2rem, 3.2vw, 2.4rem);
   transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 12px rgba(255, 117, 183, 0.52));
   animation: petal-burst 3.2s cubic-bezier(0.14, 0.88, 0.24, 1) both;
   animation-delay: calc(var(--i) * 24ms);
 }

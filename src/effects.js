@@ -96,7 +96,7 @@ export function createVoiceEffectController({
     for (let index = 0; index < petalCount; index += 1) {
       const element = createElement('span');
       element.className = 'voice-effect voice-effect--petal';
-      element.textContent = index % 3 === 0 ? '✦' : '✿';
+      element.textContent = '♥';
       setStyleIndex(element, index);
       setBurstVector(element, index, petalCount, 28);
       layer.append(element);
