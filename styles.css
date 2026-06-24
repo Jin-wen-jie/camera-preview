@@ -43,6 +43,10 @@ video {
   padding: 40px 0;
 }
 
+.camera-shell[data-camera-size="large"] {
+  grid-template-columns: minmax(0, 2.35fr) minmax(260px, 0.45fr);
+}
+
 .preview-panel,
 .control-panel {
   min-width: 0;
@@ -438,6 +442,54 @@ h1 {
   margin-top: 14px;
 }
 
+.voice-command-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.voice-command-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.voice-command-row strong {
+  min-width: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.voice-command-row strong[data-state="loading"] {
+  color: #9a5b00;
+}
+
+.voice-command-row strong[data-state="error"] {
+  color: var(--warning);
+}
+
+.snapshot-preview {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border: 1px solid rgba(17, 19, 24, 0.12);
+  border-radius: 8px;
+  background: #151a1f;
+}
+
+.snapshot-preview[hidden] {
+  display: none;
+}
+
 button {
   min-height: 46px;
   padding: 0 18px;
@@ -496,6 +548,10 @@ button:disabled {
   }
 
   .effect-command-row {
+    grid-template-columns: 1fr;
+  }
+
+  .camera-shell[data-camera-size="large"] {
     grid-template-columns: 1fr;
   }
 }

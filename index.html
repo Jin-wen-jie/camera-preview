@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>摄像头预览</title>
-    <link rel="stylesheet" href="./styles.css?v=head-anchor">
+    <link rel="stylesheet" href="./styles.css?v=voice-command-mode">
   </head>
   <body>
-    <main class="camera-shell" aria-labelledby="page-title">
+    <main class="camera-shell" data-camera-shell aria-labelledby="page-title">
       <section class="preview-panel">
         <div class="preview-frame">
           <video
@@ -70,10 +70,27 @@
           等待文字指令
         </div>
 
+        <div class="voice-command-panel" aria-label="voice command status">
+          <div class="voice-command-row">
+            <span>识别指令</span>
+            <strong data-voice-command-text>等待语音指令</strong>
+          </div>
+          <div class="voice-command-row">
+            <span>执行结果</span>
+            <strong data-voice-command-result>开启字幕后可语音控制页面</strong>
+          </div>
+          <img
+            class="snapshot-preview"
+            data-snapshot-preview
+            alt="最近拍照预览"
+            hidden
+          >
+        </div>
+
         <p class="hint">如果看不到权限弹窗，请确认正在通过 localhost 或 HTTPS 打开页面。</p>
       </aside>
     </main>
 
-    <script type="module" src="./src/app.js?v=robust-face-replace-latest-2"></script>
+    <script type="module" src="./src/app.js?v=voice-command-mode"></script>
   </body>
 </html>

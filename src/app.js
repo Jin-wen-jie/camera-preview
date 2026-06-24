@@ -2,7 +2,9 @@ import { startCamera, stopCamera } from './camera.js';
 import { createCaptionController } from './captions.js?v=replace-latest-2';
 import { createVoiceEffectController } from './effects.js?v=head-anchor';
 import { createFaceAnchorDetector } from './face.js?v=robust-face';
+import { parseVoiceCommand } from './voice-commands.js?v=voice-command-mode';
 
+const cameraShell = document.querySelector('[data-camera-shell]');
 const video = document.querySelector('[data-camera-preview]');
 const status = document.querySelector('[data-camera-status]');
 const startButton = document.querySelector('[data-camera-start]');
@@ -15,6 +17,10 @@ const effectForm = document.querySelector('[data-effect-form]');
 const effectInput = document.querySelector('[data-effect-input]');
 const effectStatus = document.querySelector('[data-effect-status]');
 const effectLayer = document.querySelector('[data-voice-effects]');
+const voiceCommandText = document.querySelector('[data-voice-command-text]');
+const voiceCommandResult = document.querySelector('[data-voice-command-result]');
+const snapshotPreview = document.querySelector('[data-snapshot-preview]');
+const createElement = document.createElement.bind(document);
 
 let currentStream = null;
 let captionController = null;
@@ -25,7 +31,7 @@ const effectLabels = {
 };
 const voiceEffects = createVoiceEffectController({
   layer: effectLayer,
-  createElement: document.createElement.bind(document)
+  createElement
 });
 const faceAnchorDetector = createFaceAnchorDetector({
   FaceDetector: window.FaceDetector,
@@ -46,6 +52,17 @@ function setCaptionControls(isRunning) {
 function setEffectStatus(text, state) {
   effectStatus.textContent = text;
   effectStatus.dataset.state = state;
+}
+
+function setVoiceCommandStatus(label, result, state = 'ready') {
+  if (voiceCommandText) {
+    voiceCommandText.textContent = label;
+  }
+
+  if (voiceCommandResult) {
+    voiceCommandResult.textContent = result;
+    voiceCommandResult.dataset.state = state;
+  }
 }
 
 async function getEffectOrigin(effectType) {
@@ -74,6 +91,89 @@ async function triggerVisualEffect(prompt) {
 
   const origin = await getEffectOrigin(effectType);
   return voiceEffects.triggerFromTranscript(prompt, { origin });
+}
+
+function captureSnapshot() {
+  const width = video.videoWidth || video.clientWidth || 1280;
+  const height = video.videoHeight || video.clientHeight || 720;
+  const canvas = createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext?.('2d');
+  if (!context) return false;
+
+  context.drawImage(video, 0, 0, width, height);
+  const dataUrl = canvas.toDataURL('image/png');
+
+  if (snapshotPreview) {
+    snapshotPreview.src = dataUrl;
+    snapshotPreview.hidden = false;
+  }
+
+  return true;
+}
+
+async function executeVoiceCommand(command, transcript) {
+  if (command.type === 'effect') {
+    const effect = await triggerVisualEffect(transcript);
+    if (!effect) {
+      return { text: '没有识别到可执行特效', state: 'error' };
+    }
+
+    setEffectStatus(getEffectReadyText(effect), 'ready');
+    return { text: `已执行：${command.label}`, state: 'ready' };
+  }
+
+  if (command.type === 'clear-effects') {
+    voiceEffects.clear();
+    return { text: '特效已清空', state: 'ready' };
+  }
+
+  if (command.type === 'hide-captions') {
+    captionOutput.hidden = true;
+    return { text: '字幕已隐藏', state: 'ready' };
+  }
+
+  if (command.type === 'show-captions') {
+    captionOutput.hidden = false;
+    return { text: '字幕已显示', state: 'ready' };
+  }
+
+  if (command.type === 'camera-large') {
+    if (cameraShell?.dataset) {
+      cameraShell.dataset.cameraSize = 'large';
+    }
+    return { text: '摄像头画面已放大', state: 'ready' };
+  }
+
+  if (command.type === 'camera-normal') {
+    if (cameraShell?.dataset) {
+      cameraShell.dataset.cameraSize = 'normal';
+    }
+    return { text: '摄像头画面已恢复', state: 'ready' };
+  }
+
+  if (command.type === 'snapshot') {
+    const didCapture = captureSnapshot();
+    return didCapture
+      ? { text: '已拍照', state: 'ready' }
+      : { text: '当前浏览器无法拍照', state: 'error' };
+  }
+
+  return { text: '没有识别到可执行指令', state: 'error' };
+}
+
+async function handleVoiceTranscript(transcript) {
+  const command = parseVoiceCommand(transcript);
+  if (!command) {
+    await triggerVisualEffect(transcript);
+    return;
+  }
+
+  setVoiceCommandStatus(command.label, '执行中...', 'loading');
+  const result = await executeVoiceCommand(command, transcript);
+  setVoiceCommandStatus(command.label, result.text, result.state);
 }
 
 async function handleStart() {
@@ -124,7 +224,7 @@ captionController = createCaptionController({
   output: captionOutput,
   status: captionStatus,
   onTranscript: (_visibleTranscript, recentTranscript) => {
-    void triggerVisualEffect(recentTranscript);
+    void handleVoiceTranscript(recentTranscript);
   },
   onStateChange: setCaptionControls
 });

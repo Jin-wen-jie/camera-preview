@@ -41,3 +41,17 @@ test('typed effect command controls are arranged as a compact input row', async 
   assert.match(css, /\.effect-command-row\s*\{[^}]*display:\s*grid/s);
   assert.match(css, /\.effect-command-input\s*\{[^}]*min-height:\s*46px/s);
 });
+
+test('voice command status and snapshot preview have stable panel styles', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.voice-command-panel\s*\{[^}]*display:\s*grid/s);
+  assert.match(css, /\.voice-command-row\s*\{[^}]*grid-template-columns:\s*auto\s*minmax\(0,\s*1fr\)/s);
+  assert.match(css, /\.snapshot-preview\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9/s);
+});
+
+test('voice command can enlarge the camera area', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.camera-shell\[data-camera-size="large"\]\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*2\.35fr\)\s*minmax\(260px,\s*0\.45fr\)/s);
+});

@@ -71,15 +71,21 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
   const video = {
     videoWidth: 1000,
     videoHeight: 500,
+    clientWidth: 1000,
+    clientHeight: 500,
     srcObject: null,
     async play() {}
   };
+  const cameraShell = { dataset: {} };
   const status = { textContent: '', dataset: {} };
-  const captionOutput = { textContent: '', dataset: {} };
+  const captionOutput = { textContent: '', dataset: {}, hidden: false };
   const captionStatus = { textContent: '', dataset: {} };
   const effectForm = createForm();
   const effectInput = { value: '' };
   const effectStatus = { textContent: '', dataset: {} };
+  const voiceCommandText = { textContent: '', dataset: {} };
+  const voiceCommandResult = { textContent: '', dataset: {} };
+  const snapshotPreview = { hidden: true, src: '', alt: '' };
   const effectLayer = {
     children: [],
     dataset: {},
@@ -103,6 +109,7 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
   const beforeUnloadListeners = [];
 
   const selectors = {
+    '[data-camera-shell]': cameraShell,
     '[data-camera-preview]': video,
     '[data-camera-status]': status,
     '[data-camera-start]': startButton,
@@ -114,6 +121,9 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
     '[data-effect-form]': effectForm,
     '[data-effect-input]': effectInput,
     '[data-effect-status]': effectStatus,
+    '[data-voice-command-text]': voiceCommandText,
+    '[data-voice-command-result]': voiceCommandResult,
+    '[data-snapshot-preview]': snapshotPreview,
     '[data-voice-effects]': effectLayer
   };
 
@@ -123,6 +133,21 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
 
   globalThis.document = {
     createElement(tagName) {
+      if (tagName === 'canvas') {
+        return {
+          width: 0,
+          height: 0,
+          getContext(type) {
+            return type === '2d'
+              ? { drawImage() {} }
+              : null;
+          },
+          toDataURL(type) {
+            return `data:${type};base64,fake-snapshot`;
+          }
+        };
+      }
+
       return {
         tagName,
         className: '',
@@ -157,6 +182,7 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
     await Promise.resolve();
     return {
       video,
+      cameraShell,
       status,
       startButton,
       stopButton,
@@ -165,6 +191,9 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
       effectForm,
       effectInput,
       effectStatus,
+      voiceCommandText,
+      voiceCommandResult,
+      snapshotPreview,
       effectLayer,
       captionStartButton,
       captionStopButton,
@@ -305,4 +334,96 @@ test('app positions flower effects above a detected face from typed commands', a
   assert.equal(effectLayer.dataset.effect, 'flower');
   assert.equal(effectLayer.style.values['--effect-x'], '70%');
   assert.equal(effectLayer.style.values['--effect-y'], '23%');
+});
+
+test('app executes caption voice commands for subtitles and camera size', async () => {
+  FakeSpeechRecognition.instances = [];
+  const stream = { getTracks: () => [] };
+
+  const {
+    captionStartButton,
+    captionOutput,
+    cameraShell,
+    voiceCommandText,
+    voiceCommandResult
+  } = await loadAppWithFakes({
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  captionStartButton.click();
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '隐藏字幕', isFinal: true });
+  await flushAsyncEffects();
+
+  assert.equal(captionOutput.hidden, true);
+  assert.equal(voiceCommandText.textContent, '隐藏字幕');
+  assert.equal(voiceCommandResult.textContent, '字幕已隐藏');
+
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '显示字幕', isFinal: true });
+  await flushAsyncEffects();
+  assert.equal(captionOutput.hidden, false);
+  assert.equal(voiceCommandResult.textContent, '字幕已显示');
+
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '放大摄像头', isFinal: true });
+  await flushAsyncEffects();
+  assert.equal(cameraShell.dataset.cameraSize, 'large');
+  assert.equal(voiceCommandResult.textContent, '摄像头画面已放大');
+
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '缩小摄像头', isFinal: true });
+  await flushAsyncEffects();
+  assert.equal(cameraShell.dataset.cameraSize, 'normal');
+  assert.equal(voiceCommandResult.textContent, '摄像头画面已恢复');
+});
+
+test('app captures a snapshot from a voice command', async () => {
+  FakeSpeechRecognition.instances = [];
+  const stream = { getTracks: () => [] };
+
+  const {
+    captionStartButton,
+    snapshotPreview,
+    voiceCommandText,
+    voiceCommandResult
+  } = await loadAppWithFakes({
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  captionStartButton.click();
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '帮我拍照', isFinal: true });
+  await flushAsyncEffects();
+
+  assert.equal(snapshotPreview.hidden, false);
+  assert.equal(snapshotPreview.src, 'data:image/png;base64,fake-snapshot');
+  assert.equal(voiceCommandText.textContent, '拍照');
+  assert.equal(voiceCommandResult.textContent, '已拍照');
+});
+
+test('app clears visual effects from a voice command', async () => {
+  FakeSpeechRecognition.instances = [];
+  const stream = { getTracks: () => [] };
+
+  const {
+    captionStartButton,
+    effectLayer,
+    voiceCommandResult
+  } = await loadAppWithFakes({
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  captionStartButton.click();
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '下雪', isFinal: true });
+  await flushAsyncEffects();
+  assert.equal(effectLayer.dataset.effect, 'snow');
+
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '清空特效', isFinal: true });
+  await flushAsyncEffects();
+
+  assert.equal(effectLayer.children.length, 0);
+  assert.equal(effectLayer.dataset.effect, undefined);
+  assert.equal(voiceCommandResult.textContent, '特效已清空');
 });
