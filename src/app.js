@@ -176,6 +176,23 @@ async function handleVoiceTranscript(transcript) {
   setVoiceCommandStatus(command.label, result.text, result.state);
 }
 
+async function executeTextCommand(prompt) {
+  const command = parseVoiceCommand(prompt);
+  if (command) {
+    setVoiceCommandStatus(command.label, '执行中...', 'loading');
+    const result = await executeVoiceCommand(command, prompt);
+    setVoiceCommandStatus(command.label, result.text, result.state);
+    setEffectStatus(result.text, result.state);
+    return true;
+  }
+
+  const effect = await triggerVisualEffect(prompt);
+  if (!effect) return false;
+
+  setEffectStatus(getEffectReadyText(effect), 'ready');
+  return true;
+}
+
 async function handleStart() {
   startButton.disabled = true;
 
@@ -207,13 +224,11 @@ async function handleEffectSubmit(event) {
     return;
   }
 
-  const effect = await triggerVisualEffect(prompt);
-  if (!effect) {
+  const didExecute = await executeTextCommand(prompt);
+  if (!didExecute) {
     setEffectStatus('没有识别到可执行指令', 'error');
     return;
   }
-
-  setEffectStatus(getEffectReadyText(effect), 'ready');
 }
 
 startButton.addEventListener('click', handleStart);

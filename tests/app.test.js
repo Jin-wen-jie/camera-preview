@@ -336,6 +336,33 @@ test('app positions flower effects above a detected face from typed commands', a
   assert.equal(effectLayer.style.values['--effect-y'], '23%');
 });
 
+test('app executes page control commands from the text command box', async () => {
+  const stream = { getTracks: () => [] };
+
+  const {
+    cameraShell,
+    effectForm,
+    effectInput,
+    effectStatus,
+    voiceCommandText,
+    voiceCommandResult
+  } = await loadAppWithFakes({
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  effectInput.value = '放大摄像头';
+  await effectForm.submit();
+  await flushAsyncEffects();
+
+  assert.equal(cameraShell.dataset.cameraSize, 'large');
+  assert.equal(effectStatus.textContent, '摄像头画面已放大');
+  assert.equal(effectStatus.dataset.state, 'ready');
+  assert.equal(voiceCommandText.textContent, '放大摄像头');
+  assert.equal(voiceCommandResult.textContent, '摄像头画面已放大');
+});
+
 test('app executes caption voice commands for subtitles and camera size', async () => {
   FakeSpeechRecognition.instances = [];
   const stream = { getTracks: () => [] };
