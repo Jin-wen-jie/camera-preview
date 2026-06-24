@@ -1,7 +1,7 @@
 import { startCamera, stopCamera } from './camera.js';
-import { createCaptionController } from './captions.js?v=replace-latest';
+import { createCaptionController } from './captions.js?v=replace-latest-2';
 import { createVoiceEffectController } from './effects.js?v=head-anchor';
-import { createFaceAnchorDetector } from './face.js?v=mediapipe-face';
+import { createFaceAnchorDetector } from './face.js?v=robust-face';
 
 const video = document.querySelector('[data-camera-preview]');
 const status = document.querySelector('[data-camera-status]');

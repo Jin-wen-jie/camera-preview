@@ -60,6 +60,42 @@ test('face anchor detector uses a model detector when native detection is unavai
   ]);
 });
 
+test('face anchor detector samples nearby frames when the first frame misses a face', async () => {
+  const calls = [];
+  const waits = [];
+  const detector = createFaceAnchorDetector({
+    FaceDetector: undefined,
+    video: { videoWidth: 1000, videoHeight: 500 },
+    now: () => 1234 + calls.length,
+    sampleFrameCount: 3,
+    sampleDelayMs: 40,
+    wait(ms) {
+      waits.push(ms);
+      return Promise.resolve();
+    },
+    async createModelDetector() {
+      return {
+        detect(video, timestamp) {
+          calls.push({ video, timestamp });
+          if (calls.length < 3) {
+            return [];
+          }
+
+          return [
+            {
+              boundingBox: { originX: 200, originY: 150, width: 200, height: 180 }
+            }
+          ];
+        }
+      };
+    }
+  });
+
+  assert.deepEqual(await detector.detect(), { x: 70, y: 23 });
+  assert.deepEqual(waits, [40, 40]);
+  assert.equal(detector.getStatus().state, 'detected');
+});
+
 test('createMediaPipeFaceDetector loads the pinned video detector', async () => {
   const events = [];
   const detector = await createMediaPipeFaceDetector({
@@ -124,9 +160,9 @@ test('createMediaPipeFaceDetector loads the pinned video detector', async () => 
       wasmFileset: { wasm: true },
       options: {
         baseOptions: {
-          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite'
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_full_range/float16/1/blaze_face_full_range.tflite'
         },
-        minDetectionConfidence: 0.5,
+        minDetectionConfidence: 0.35,
         runningMode: 'VIDEO'
       }
     },

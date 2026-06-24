@@ -2,7 +2,7 @@ const CENTER_ANCHOR = { x: 50, y: 50 };
 const MEDIAPIPE_VERSION = '0.10.35';
 const MEDIAPIPE_MODULE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/vision_bundle.mjs`;
 const MEDIAPIPE_WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
-const FACE_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
+const FACE_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_full_range/float16/1/blaze_face_full_range.tflite';
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -76,7 +76,7 @@ export async function createMediaPipeFaceDetector({
     baseOptions: {
       modelAssetPath: FACE_MODEL_URL
     },
-    minDetectionConfidence: 0.5,
+    minDetectionConfidence: 0.35,
     runningMode: 'VIDEO'
   });
 
@@ -93,7 +93,12 @@ export function createFaceAnchorDetector({
   fallback = CENTER_ANCHOR,
   mirrorX = true,
   createModelDetector,
-  now = () => globalThis.performance?.now?.() || Date.now()
+  now = () => globalThis.performance?.now?.() || Date.now(),
+  sampleFrameCount = 5,
+  sampleDelayMs = 80,
+  wait = (ms) => new Promise((resolve) => {
+    globalThis.setTimeout(resolve, ms);
+  })
 }) {
   let detector = null;
   let modelDetector = null;
@@ -172,6 +177,24 @@ export function createFaceAnchorDetector({
     return modelDetectorPromise;
   }
 
+  async function findFaceAcrossNearbyFrames(activeDetector) {
+    const attempts = Math.max(1, sampleFrameCount);
+
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      const faces = await activeDetector.detect(video, now());
+      const face = findLargestFace(faces || []);
+      if (face?.boundingBox) {
+        return face;
+      }
+
+      if (attempt < attempts - 1 && sampleDelayMs > 0) {
+        await wait(sampleDelayMs);
+      }
+    }
+
+    return null;
+  }
+
   return {
     isSupported: Boolean(detector),
     getStatus() {
@@ -192,12 +215,11 @@ export function createFaceAnchorDetector({
           return fallback;
         }
 
-        const faces = await activeDetector.detect(video, now());
-        const face = findLargestFace(faces || []);
+        const face = await findFaceAcrossNearbyFrames(activeDetector);
         if (!face?.boundingBox) {
           status = {
             state: 'fallback',
-            message: '未检测到人脸，已使用画面中心'
+            message: '连续检测多帧仍未检测到人脸，已使用画面中心'
           };
           return fallback;
         }

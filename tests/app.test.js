@@ -32,6 +32,9 @@ async function flushAsyncEffects() {
   for (let index = 0; index < 8; index += 1) {
     await Promise.resolve();
   }
+  await new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 }
 
 class FakeSpeechRecognition {
@@ -229,16 +232,20 @@ test('app starts live captions from the caption button', async () => {
 
 test('app triggers visual effects from recognized speech', async () => {
   FakeSpeechRecognition.instances = [];
-  class EmptyFaceDetector {
+  class FakeFaceDetector {
     async detect() {
-      return [];
+      return [
+        {
+          boundingBox: { x: 200, y: 150, width: 200, height: 180 }
+        }
+      ];
     }
   }
 
   const stream = { getTracks: () => [] };
 
   const { captionStartButton, effectLayer } = await loadAppWithFakes({
-    FaceDetector: EmptyFaceDetector,
+    FaceDetector: FakeFaceDetector,
     async getUserMedia() {
       return stream;
     }
