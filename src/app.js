@@ -1,7 +1,7 @@
 import { startCamera, stopCamera } from './camera.js';
-import { createCaptionController } from './captions.js';
+import { createCaptionController } from './captions.js?v=keep-listening';
 import { createVoiceEffectController } from './effects.js?v=head-anchor';
-import { createFaceAnchorDetector } from './face.js?v=head-anchor';
+import { createFaceAnchorDetector } from './face.js?v=mediapipe-face';
 
 const video = document.querySelector('[data-camera-preview]');
 const status = document.querySelector('[data-camera-status]');
@@ -49,9 +49,23 @@ function setEffectStatus(text, state) {
 }
 
 async function getEffectOrigin(effectType) {
-  return effectType === 'flower'
-    ? faceAnchorDetector.detect()
-    : undefined;
+  if (effectType !== 'flower') {
+    return undefined;
+  }
+
+  setEffectStatus('正在定位人脸...', 'loading');
+  return faceAnchorDetector.detect();
+}
+
+function getEffectReadyText(effect) {
+  const faceStatus = effect === 'flower'
+    ? faceAnchorDetector.getStatus()
+    : null;
+  const statusText = faceStatus?.message
+    ? `（${faceStatus.message}）`
+    : '';
+
+  return `已执行：${effectLabels[effect]}${statusText}`;
 }
 
 async function triggerVisualEffect(prompt) {
@@ -99,7 +113,7 @@ async function handleEffectSubmit(event) {
     return;
   }
 
-  setEffectStatus(`已执行：${effectLabels[effect]}`, 'ready');
+  setEffectStatus(getEffectReadyText(effect), 'ready');
 }
 
 startButton.addEventListener('click', handleStart);
