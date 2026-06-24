@@ -53,6 +53,25 @@ test('voice effect controller shows a flower when speech contains 开花', () =>
   assert.equal(layer.children[0].textContent, '✿');
 });
 
+test('voice effect controller understands natural flower commands', () => {
+  const layer = createLayer();
+  const effects = createVoiceEffectController({
+    layer,
+    createElement,
+    timers: {
+      setTimeout() {
+        return 1;
+      },
+      clearTimeout() {}
+    }
+  });
+
+  const result = effects.triggerFromTranscript('在我头上放一朵花');
+
+  assert.equal(result, 'flower');
+  assert.equal(layer.dataset.effect, 'flower');
+});
+
 test('voice effect controller shows snow when speech contains 下雪', () => {
   const layer = createLayer();
   const effects = createVoiceEffectController({

@@ -31,3 +31,10 @@ test('voice effects are layered over the camera preview', async () => {
   assert.match(css, /\.voice-effect-layer\s*\{[^}]*z-index:\s*4/s);
   assert.match(css, /\.voice-effect--flower\s*\{[^}]*top:\s*12%/s);
 });
+
+test('typed effect command controls are arranged as a compact input row', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.effect-command-row\s*\{[^}]*display:\s*grid/s);
+  assert.match(css, /\.effect-command-input\s*\{[^}]*min-height:\s*46px/s);
+});

@@ -1,18 +1,18 @@
 const TRIGGERS = [
   {
-    phrase: '开花',
+    phrases: ['开花', '一朵花', '放花', '花朵', '头上花'],
     type: 'flower',
     className: 'voice-effect voice-effect--flower',
     content: '✿'
   },
   {
-    phrase: '爱心',
+    phrases: ['爱心', '比心', '红心', '心形'],
     type: 'heart',
     className: 'voice-effect voice-effect--heart',
     content: '♥'
   },
   {
-    phrase: '下雪',
+    phrases: ['下雪', '飘雪', '雪花'],
     type: 'snow',
     className: 'voice-effect voice-effect--snow',
     content: '❄',
@@ -90,7 +90,9 @@ export function createVoiceEffectController({
     clear,
     triggerFromTranscript(text) {
       const normalizedText = normalizeTranscript(text);
-      const trigger = TRIGGERS.find(({ phrase }) => normalizedText.includes(phrase));
+      const trigger = TRIGGERS.find(({ phrases }) => (
+        phrases.some((phrase) => normalizedText.includes(phrase))
+      ));
       return trigger ? show(trigger) : false;
     }
   };

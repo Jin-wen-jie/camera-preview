@@ -27,6 +27,7 @@ body {
 }
 
 button,
+input,
 video {
   font: inherit;
 }
@@ -290,6 +291,44 @@ h1 {
   gap: 12px;
 }
 
+.effect-command {
+  margin: 24px 0 0;
+}
+
+.effect-command-label {
+  display: block;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.effect-command-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.effect-command-input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.86);
+  font-weight: 700;
+}
+
+.effect-command-input:focus {
+  border-color: var(--accent);
+  outline: 3px solid rgba(15, 118, 110, 0.18);
+}
+
+.effect-status {
+  margin-top: 14px;
+}
+
 button {
   min-height: 46px;
   padding: 0 18px;
@@ -345,5 +384,9 @@ button:disabled {
 
   .control-panel {
     order: -1;
+  }
+
+  .effect-command-row {
+    grid-template-columns: 1fr;
   }
 }

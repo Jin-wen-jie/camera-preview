@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>摄像头预览</title>
-    <link rel="stylesheet" href="./styles.css?v=voice-effects">
+    <link rel="stylesheet" href="./styles.css?v=text-effects">
   </head>
   <body>
     <main class="camera-shell" aria-labelledby="page-title">
@@ -51,10 +51,29 @@
           <button class="secondary-button" type="button" data-caption-stop>停止字幕</button>
         </div>
 
+        <form class="effect-command" data-effect-form>
+          <label class="effect-command-label" for="effect-command-input">文字指令</label>
+          <div class="effect-command-row">
+            <input
+              id="effect-command-input"
+              class="effect-command-input"
+              data-effect-input
+              type="text"
+              autocomplete="off"
+              placeholder="在我头上放一朵花"
+            >
+            <button class="primary-button" type="submit">执行</button>
+          </div>
+        </form>
+
+        <div class="status-row effect-status" data-effect-status data-state="idle" role="status" aria-live="polite">
+          等待文字指令
+        </div>
+
         <p class="hint">如果看不到权限弹窗，请确认正在通过 localhost 或 HTTPS 打开页面。</p>
       </aside>
     </main>
 
-    <script type="module" src="./src/app.js?v=voice-effects"></script>
+    <script type="module" src="./src/app.js?v=text-effects"></script>
   </body>
 </html>

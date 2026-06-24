@@ -14,6 +14,20 @@ function createButton() {
   };
 }
 
+function createForm() {
+  const listeners = {};
+  return {
+    addEventListener(type, listener) {
+      listeners[type] = listener;
+    },
+    submit() {
+      listeners.submit?.({
+        preventDefault() {}
+      });
+    }
+  };
+}
+
 class FakeSpeechRecognition {
   static instances = [];
 
@@ -52,6 +66,9 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
   const status = { textContent: '', dataset: {} };
   const captionOutput = { textContent: '', dataset: {} };
   const captionStatus = { textContent: '', dataset: {} };
+  const effectForm = createForm();
+  const effectInput = { value: '' };
+  const effectStatus = { textContent: '', dataset: {} };
   const effectLayer = {
     children: [],
     dataset: {},
@@ -77,6 +94,9 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
     '[data-caption-status]': captionStatus,
     '[data-caption-start]': captionStartButton,
     '[data-caption-stop]': captionStopButton,
+    '[data-effect-form]': effectForm,
+    '[data-effect-input]': effectInput,
+    '[data-effect-status]': effectStatus,
     '[data-voice-effects]': effectLayer
   };
 
@@ -124,6 +144,9 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
       stopButton,
       captionOutput,
       captionStatus,
+      effectForm,
+      effectInput,
+      effectStatus,
       effectLayer,
       captionStartButton,
       captionStopButton,
@@ -205,4 +228,22 @@ test('app triggers visual effects from recognized speech', async () => {
   assert.equal(effectLayer.dataset.effect, 'flower');
   assert.equal(effectLayer.children.length, 1);
   assert.equal(effectLayer.children[0].textContent, '✿');
+});
+
+test('app triggers visual effects from typed commands', async () => {
+  const stream = { getTracks: () => [] };
+
+  const { effectForm, effectInput, effectStatus, effectLayer } = await loadAppWithFakes({
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  effectInput.value = '让画面下雪';
+  effectForm.submit();
+
+  assert.equal(effectLayer.dataset.effect, 'snow');
+  assert.equal(effectLayer.children.length, 18);
+  assert.equal(effectStatus.textContent, '已执行：下雪');
+  assert.equal(effectStatus.dataset.state, 'ready');
 });
