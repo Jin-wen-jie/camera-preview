@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 
 import { startCamera, stopCamera } from '../src/camera.js';
 
+const preferredVideoConstraints = {
+  width: { ideal: 1280 },
+  height: { ideal: 720 },
+  frameRate: { ideal: 60, max: 60 }
+};
+
 test('startCamera requests webcam video and shows the stream', async () => {
   const calls = [];
   const stream = {
@@ -27,11 +33,47 @@ test('startCamera requests webcam video and shows the stream', async () => {
 
   const result = await startCamera({ mediaDevices, video, status });
 
-  assert.deepEqual(calls, [{ video: true, audio: false }]);
+  assert.deepEqual(calls, [{ video: preferredVideoConstraints, audio: false }]);
   assert.equal(result, stream);
   assert.equal(video.srcObject, stream);
   assert.equal(playCalled, true);
   assert.equal(status.textContent, '摄像头已开启');
+  assert.equal(status.dataset.state, 'ready');
+});
+
+test('startCamera shows the actual camera settings when the browser reports them', async () => {
+  const stream = {
+    getTracks() {
+      return [];
+    },
+    getVideoTracks() {
+      return [
+        {
+          getSettings() {
+            return {
+              frameRate: 59.94,
+              width: 1280,
+              height: 720
+            };
+          }
+        }
+      ];
+    }
+  };
+  const mediaDevices = {
+    async getUserMedia() {
+      return stream;
+    }
+  };
+  const video = {
+    srcObject: null,
+    async play() {}
+  };
+  const status = { textContent: '', dataset: {} };
+
+  await startCamera({ mediaDevices, video, status });
+
+  assert.equal(status.textContent, '摄像头已开启 · 60fps · 1280x720');
   assert.equal(status.dataset.state, 'ready');
 });
 

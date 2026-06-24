@@ -2,6 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
+const preferredVideoConstraints = {
+  width: { ideal: 1280 },
+  height: { ideal: 720 },
+  frameRate: { ideal: 60, max: 60 }
+};
+
 test('page and app cache-bust voice command parsing with the flower command version', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const source = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
@@ -276,7 +282,7 @@ test('app automatically starts the camera and hand trail status when the page lo
     }
   });
 
-  assert.deepEqual(calls, [{ video: true, audio: false }]);
+  assert.deepEqual(calls, [{ video: preferredVideoConstraints, audio: false }]);
   assert.equal(video.srcObject, stream);
   assert.equal(startButton.disabled, true);
   assert.equal(stopButton.disabled, false);
