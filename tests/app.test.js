@@ -30,6 +30,18 @@ class FakeSpeechRecognition {
   stop() {
     this.onend?.();
   }
+
+  emitResult({ transcript, isFinal = false }) {
+    this.onresult?.({
+      resultIndex: 0,
+      results: [
+        {
+          0: { transcript },
+          isFinal
+        }
+      ]
+    });
+  }
 }
 
 async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRecognition }) {
@@ -40,6 +52,16 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
   const status = { textContent: '', dataset: {} };
   const captionOutput = { textContent: '', dataset: {} };
   const captionStatus = { textContent: '', dataset: {} };
+  const effectLayer = {
+    children: [],
+    dataset: {},
+    append(...children) {
+      this.children.push(...children);
+    },
+    replaceChildren(...children) {
+      this.children = children;
+    }
+  };
   const startButton = createButton();
   const stopButton = createButton();
   const captionStartButton = createButton();
@@ -54,7 +76,8 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
     '[data-live-caption]': captionOutput,
     '[data-caption-status]': captionStatus,
     '[data-caption-start]': captionStartButton,
-    '[data-caption-stop]': captionStopButton
+    '[data-caption-stop]': captionStopButton,
+    '[data-voice-effects]': effectLayer
   };
 
   const previousDocument = globalThis.document;
@@ -62,6 +85,17 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
   const previousNavigator = globalThis.navigator;
 
   globalThis.document = {
+    createElement(tagName) {
+      return {
+        tagName,
+        className: '',
+        textContent: '',
+        dataset: {},
+        style: {
+          setProperty() {}
+        }
+      };
+    },
     querySelector(selector) {
       return selectors[selector];
     }
@@ -90,6 +124,7 @@ async function loadAppWithFakes({ getUserMedia, SpeechRecognition = FakeSpeechRe
       stopButton,
       captionOutput,
       captionStatus,
+      effectLayer,
       captionStartButton,
       captionStopButton,
       beforeUnloadListeners
@@ -152,4 +187,22 @@ test('app starts live captions from the caption button', async () => {
   assert.equal(captionStartButton.disabled, true);
   assert.equal(captionStopButton.disabled, false);
   assert.equal(captionStatus.textContent, '正在听你说话');
+});
+
+test('app triggers visual effects from recognized speech', async () => {
+  FakeSpeechRecognition.instances = [];
+  const stream = { getTracks: () => [] };
+
+  const { captionStartButton, effectLayer } = await loadAppWithFakes({
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  captionStartButton.click();
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '开花', isFinal: false });
+
+  assert.equal(effectLayer.dataset.effect, 'flower');
+  assert.equal(effectLayer.children.length, 1);
+  assert.equal(effectLayer.children[0].textContent, '✿');
 });

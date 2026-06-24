@@ -26,6 +26,7 @@ export function createCaptionController({
   output,
   status,
   language = 'zh-CN',
+  onTranscript = () => {},
   onStateChange = () => {}
 }) {
   if (!SpeechRecognition) {
@@ -63,11 +64,14 @@ export function createCaptionController({
 
     instance.onresult = (event) => {
       let interimTranscript = '';
+      let recentTranscript = '';
 
       for (let index = event.resultIndex; index < event.results.length; index += 1) {
         const result = event.results[index];
         const transcript = getTranscript(result);
         if (!transcript) continue;
+
+        recentTranscript = `${recentTranscript} ${transcript}`.trim();
 
         if (result.isFinal) {
           finalTranscript = `${finalTranscript} ${transcript}`.trim();
@@ -78,6 +82,9 @@ export function createCaptionController({
 
       const visibleTranscript = `${finalTranscript} ${interimTranscript}`.trim();
       setCaption(output, visibleTranscript || EMPTY_CAPTION, visibleTranscript ? 'active' : 'idle');
+      if (recentTranscript) {
+        onTranscript(visibleTranscript, recentTranscript);
+      }
     };
 
     instance.onerror = (event) => {

@@ -115,6 +115,101 @@ video {
   color: #ffe2df;
 }
 
+.voice-effect-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.voice-effect {
+  position: absolute;
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
+  text-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+}
+
+.voice-effect--flower {
+  top: 12%;
+  left: 50%;
+  color: #ff4fa3;
+  font-size: clamp(4rem, 10vw, 8rem);
+  transform: translateX(-50%);
+  animation: bloom-in 2.6s ease both;
+}
+
+.voice-effect--heart {
+  top: 16%;
+  left: 50%;
+  color: #ff335f;
+  font-size: clamp(3.5rem, 9vw, 7rem);
+  transform: translateX(-50%);
+  animation: pop-heart 2.6s ease both;
+}
+
+.voice-effect--snow {
+  top: -12%;
+  left: calc((var(--i) * 5.7%) + 2%);
+  color: rgba(255, 255, 255, 0.94);
+  font-size: clamp(1.2rem, 3vw, 2.4rem);
+  animation: snow-fall 2.6s linear both;
+  animation-delay: calc(var(--i) * 80ms);
+}
+
+@keyframes bloom-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.28) rotate(-18deg);
+  }
+
+  18%,
+  72% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1) rotate(0deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.86) translateY(-18px);
+  }
+}
+
+@keyframes pop-heart {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.36);
+  }
+
+  20%,
+  68% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(1.18) translateY(-20px);
+  }
+}
+
+@keyframes snow-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg);
+  }
+
+  16% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(92vh) rotate(220deg);
+  }
+}
+
 .control-panel {
   padding: clamp(8px, 2vw, 24px) 0;
 }

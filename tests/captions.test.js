@@ -43,12 +43,16 @@ test('caption controller starts speech recognition and shows live words', () => 
   const output = { textContent: '', dataset: {} };
   const status = { textContent: '', dataset: {} };
   const states = [];
+  const transcripts = [];
 
   const captions = createCaptionController({
     SpeechRecognition: FakeSpeechRecognition,
     output,
     status,
-    onStateChange: (isRunning) => states.push(isRunning)
+    onStateChange: (isRunning) => states.push(isRunning),
+    onTranscript: (visibleTranscript, recentTranscript) => {
+      transcripts.push({ visibleTranscript, recentTranscript });
+    }
   });
 
   captions.start();
@@ -63,6 +67,12 @@ test('caption controller starts speech recognition and shows live words', () => 
   assert.equal(output.dataset.state, 'active');
   assert.equal(status.textContent, '正在听你说话');
   assert.deepEqual(states, [true]);
+  assert.deepEqual(transcripts, [
+    {
+      visibleTranscript: '你好，实时字幕',
+      recentTranscript: '你好，实时字幕'
+    }
+  ]);
 });
 
 test('caption controller reports unsupported browsers clearly', () => {

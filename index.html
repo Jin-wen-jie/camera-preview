@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>摄像头预览</title>
-    <link rel="stylesheet" href="./styles.css?v=2dfca58">
+    <link rel="stylesheet" href="./styles.css?v=voice-effects">
   </head>
   <body>
     <main class="camera-shell" aria-labelledby="page-title">
@@ -21,6 +21,7 @@
           <div class="preview-placeholder" aria-hidden="true">
             <span></span>
           </div>
+          <div class="voice-effect-layer" data-voice-effects aria-hidden="true"></div>
           <div class="caption-overlay" data-live-caption data-state="idle" aria-live="polite">
             字幕将在这里显示
           </div>
@@ -54,6 +55,6 @@
       </aside>
     </main>
 
-    <script type="module" src="./src/app.js"></script>
+    <script type="module" src="./src/app.js?v=voice-effects"></script>
   </body>
 </html>

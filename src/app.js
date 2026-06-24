@@ -1,5 +1,6 @@
 import { startCamera, stopCamera } from './camera.js';
 import { createCaptionController } from './captions.js';
+import { createVoiceEffectController } from './effects.js';
 
 const video = document.querySelector('[data-camera-preview]');
 const status = document.querySelector('[data-camera-status]');
@@ -9,9 +10,14 @@ const captionOutput = document.querySelector('[data-live-caption]');
 const captionStatus = document.querySelector('[data-caption-status]');
 const captionStartButton = document.querySelector('[data-caption-start]');
 const captionStopButton = document.querySelector('[data-caption-stop]');
+const effectLayer = document.querySelector('[data-voice-effects]');
 
 let currentStream = null;
 let captionController = null;
+const voiceEffects = createVoiceEffectController({
+  layer: effectLayer,
+  createElement: document.createElement.bind(document)
+});
 
 function setControls(isRunning) {
   startButton.disabled = isRunning;
@@ -52,9 +58,13 @@ captionController = createCaptionController({
   SpeechRecognition: window.SpeechRecognition || window.webkitSpeechRecognition,
   output: captionOutput,
   status: captionStatus,
+  onTranscript: (_visibleTranscript, recentTranscript) => {
+    voiceEffects.triggerFromTranscript(recentTranscript);
+  },
   onStateChange: setCaptionControls
 });
 captionStartButton.addEventListener('click', () => {
+  voiceEffects.clear();
   captionController.start();
 });
 captionStopButton.addEventListener('click', () => {
@@ -64,6 +74,7 @@ window.addEventListener('beforeunload', () => {
   if (currentStream) {
     stopCamera({ stream: currentStream, video, status: null });
   }
+  voiceEffects.clear();
   captionController.stop();
 });
 
