@@ -2,9 +2,12 @@ const MEDIAPIPE_VERSION = '0.10.35';
 const MEDIAPIPE_MODULE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/vision_bundle.mjs`;
 const MEDIAPIPE_WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
 const HAND_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+const THUMB_TIP = 4;
 const INDEX_TIP = 8;
 const TRAIL_RETENTION_MS = 5000;
-const OPEN_PALM_HOLD_MS = 500;
+const PINCH_START_RATIO = 0.18;
+const PINCH_STOP_RATIO = 0.34;
+const PINCH_HOLD_MS = 120;
 
 function setStatus(status, text, state) {
   if (!status) return;
@@ -18,6 +21,18 @@ function hasPoint(landmarks, index) {
   return Number.isFinite(landmarks?.[index]?.x) && Number.isFinite(landmarks?.[index]?.y);
 }
 
+function getDistance(first, second) {
+  return Math.hypot(first.x - second.x, first.y - second.y);
+}
+
+function getPalmWidth(landmarks) {
+  if (!hasPoint(landmarks, 5) || !hasPoint(landmarks, 17)) {
+    return null;
+  }
+
+  return getDistance(landmarks[5], landmarks[17]);
+}
+
 function isFingerExtended(landmarks, tip, pip) {
   return hasPoint(landmarks, tip)
     && hasPoint(landmarks, pip)
@@ -26,7 +41,7 @@ function isFingerExtended(landmarks, tip, pip) {
 
 function isThumbExtended(landmarks) {
   if (
-    !hasPoint(landmarks, 4)
+    !hasPoint(landmarks, THUMB_TIP)
     || !hasPoint(landmarks, 2)
     || !hasPoint(landmarks, 5)
     || !hasPoint(landmarks, 17)
@@ -35,7 +50,7 @@ function isThumbExtended(landmarks) {
   }
 
   const palmCenterX = (landmarks[5].x + landmarks[17].x) / 2;
-  return Math.abs(landmarks[4].x - palmCenterX) > Math.abs(landmarks[2].x - palmCenterX);
+  return Math.abs(landmarks[THUMB_TIP].x - palmCenterX) > Math.abs(landmarks[2].x - palmCenterX);
 }
 
 export function isOpenPalm(landmarks) {
@@ -57,6 +72,23 @@ export function getIndexFingerTip(landmarks) {
     x: landmarks[INDEX_TIP].x,
     y: landmarks[INDEX_TIP].y
   };
+}
+
+export function getFingerPinchRatio(landmarks) {
+  if (!hasPoint(landmarks, THUMB_TIP) || !hasPoint(landmarks, INDEX_TIP)) {
+    return Infinity;
+  }
+
+  const palmWidth = getPalmWidth(landmarks);
+  if (!palmWidth) {
+    return Infinity;
+  }
+
+  return getDistance(landmarks[THUMB_TIP], landmarks[INDEX_TIP]) / palmWidth;
+}
+
+export function isFingerPinched(landmarks, threshold = PINCH_START_RATIO) {
+  return getFingerPinchRatio(landmarks) <= threshold;
 }
 
 export function pruneTrailPoints(points, timestamp, retentionMs = TRAIL_RETENTION_MS) {
@@ -97,8 +129,7 @@ export function createIndexFingerTrailController({
   let detectorPromise = null;
   let frameId = null;
   let recording = false;
-  let openPalmSince = null;
-  let didToggleForOpenPalm = false;
+  let pinchSince = null;
   let trailPoints = [];
   let lastVideoTime = -1;
   const context = canvas?.getContext?.('2d') || null;
@@ -153,21 +184,44 @@ export function createIndexFingerTrailController({
     });
   }
 
-  function processLandmarks(landmarks, timestamp = now()) {
-    const openPalm = isOpenPalm(landmarks);
-    if (openPalm) {
-      openPalmSince ??= timestamp;
-      if (!didToggleForOpenPalm && timestamp - openPalmSince >= OPEN_PALM_HOLD_MS) {
-        recording = !recording;
-        didToggleForOpenPalm = true;
-        updateStatus(recording ? '轨迹记录中' : '五指张开已暂停', recording ? 'recording' : 'paused');
+  function clearTrail(timestamp) {
+    recording = false;
+    pinchSince = null;
+    trailPoints = [];
+    updateStatus('五指张开已清屏', 'cleared');
+    draw(timestamp);
+  }
+
+  function updateRecordingState(landmarks, timestamp) {
+    const pinchRatio = getFingerPinchRatio(landmarks);
+    if (pinchRatio <= PINCH_START_RATIO) {
+      pinchSince ??= timestamp;
+      if (!recording && timestamp - pinchSince >= PINCH_HOLD_MS) {
+        recording = true;
+        updateStatus('记录中', 'recording');
       }
-    } else {
-      openPalmSince = null;
-      didToggleForOpenPalm = false;
+      return;
+    }
+
+    if (pinchRatio >= PINCH_STOP_RATIO) {
+      pinchSince = null;
       if (recording) {
-        addIndexPoint(landmarks, timestamp);
+        recording = false;
+        updateStatus('分开已暂停', 'paused');
       }
+    }
+  }
+
+  function processLandmarks(landmarks, timestamp = now()) {
+    if (isOpenPalm(landmarks)) {
+      clearTrail(timestamp);
+      return;
+    }
+
+    updateRecordingState(landmarks, timestamp);
+
+    if (recording) {
+      addIndexPoint(landmarks, timestamp);
     }
 
     trailPoints = pruneTrailPoints(trailPoints, timestamp);
@@ -181,7 +235,7 @@ export function createIndexFingerTrailController({
       detectorPromise = createHandLandmarker()
         .then((createdDetector) => {
           detector = createdDetector;
-          updateStatus('等待五指张开开始', 'waiting');
+          updateStatus('捏合开始记录', 'waiting');
           return detector;
         })
         .catch(() => {
@@ -211,7 +265,7 @@ export function createIndexFingerTrailController({
 
   return {
     start() {
-      updateStatus('等待五指张开开始', 'waiting');
+      updateStatus('捏合开始记录', 'waiting');
       if (requestAnimationFrame && frameId === null) {
         frameId = requestAnimationFrame(tick);
       }
@@ -222,8 +276,7 @@ export function createIndexFingerTrailController({
       }
       frameId = null;
       recording = false;
-      openPalmSince = null;
-      didToggleForOpenPalm = false;
+      pinchSince = null;
       trailPoints = [];
       draw();
       updateStatus('手势识别已停止', 'idle');

@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createIndexFingerTrailController,
+  getFingerPinchRatio,
   getIndexFingerTip,
+  isFingerPinched,
   isOpenPalm,
   pruneTrailPoints
 } from '../src/hands.js';
@@ -37,13 +39,41 @@ function openPalmLandmarks() {
   return points;
 }
 
-function relaxedHandLandmarks() {
+function pinchedLandmarks() {
   const points = openPalmLandmarks();
-  points[8] = landmark(0.42, 0.62);
-  points[12] = landmark(0.50, 0.62);
-  points[16] = landmark(0.58, 0.62);
-  points[20] = landmark(0.66, 0.62);
+  points[4] = landmark(0.42, 0.22);
+  points[8] = landmark(0.43, 0.21);
+  points[12] = landmark(0.50, 0.46);
+  points[16] = landmark(0.58, 0.52);
+  points[20] = landmark(0.66, 0.58);
   return points;
+}
+
+function separatedLandmarks() {
+  const points = pinchedLandmarks();
+  points[4] = landmark(0.24, 0.42);
+  points[8] = landmark(0.48, 0.24);
+  return points;
+}
+
+function createCanvas() {
+  return {
+    width: 0,
+    height: 0,
+    getContext() {
+      return {
+        clearRect() {},
+        beginPath() {},
+        moveTo() {},
+        lineTo() {},
+        stroke() {},
+        set strokeStyle(value) {},
+        set lineWidth(value) {},
+        set lineCap(value) {},
+        set lineJoin(value) {}
+      };
+    }
+  };
 }
 
 test('isOpenPalm returns true when all five fingers are extended', () => {
@@ -55,6 +85,16 @@ test('isOpenPalm returns false when the index finger is folded', () => {
   points[8] = landmark(0.42, 0.62);
 
   assert.equal(isOpenPalm(points), false);
+});
+
+test('pinch ratio is normalized by palm width', () => {
+  assert.ok(getFingerPinchRatio(pinchedLandmarks()) < 0.18);
+  assert.ok(getFingerPinchRatio(separatedLandmarks()) > 0.34);
+});
+
+test('isFingerPinched uses normalized thumb-index distance', () => {
+  assert.equal(isFingerPinched(pinchedLandmarks()), true);
+  assert.equal(isFingerPinched(separatedLandmarks()), false);
 });
 
 test('getIndexFingerTip returns normalized index fingertip coordinates', () => {
@@ -74,11 +114,11 @@ test('pruneTrailPoints removes points older than the retention window', () => {
   ]);
 });
 
-test('controller toggles once per stable open palm gesture', () => {
+test('controller records while pinched and pauses when fingers separate', () => {
   const states = [];
   const controller = createIndexFingerTrailController({
     video: { videoWidth: 640, videoHeight: 480 },
-    canvas: null,
+    canvas: createCanvas(),
     status: { textContent: '', dataset: {} },
     createHandLandmarker: async () => null,
     requestAnimationFrame: () => 0,
@@ -87,56 +127,39 @@ test('controller toggles once per stable open palm gesture', () => {
     now: () => 0
   });
 
-  const openPalm = openPalmLandmarks();
-  const relaxedHand = relaxedHandLandmarks();
-  controller.processLandmarks(openPalm, 1000);
+  controller.processLandmarks(pinchedLandmarks(), 1000);
   assert.equal(controller.isRecording(), false);
-  controller.processLandmarks(openPalm, 1500);
+  controller.processLandmarks(pinchedLandmarks(), 1150);
   assert.equal(controller.isRecording(), true);
-  controller.processLandmarks(openPalm, 2500);
-  assert.equal(controller.isRecording(), true);
-  controller.processLandmarks(relaxedHand, 2600);
-  controller.processLandmarks(openPalm, 3000);
-  controller.processLandmarks(openPalm, 3500);
+  controller.processLandmarks(pinchedLandmarks(), 1250);
+  assert.equal(controller.getTrailPoints().length, 2);
+  controller.processLandmarks(separatedLandmarks(), 1400);
   assert.equal(controller.isRecording(), false);
+  controller.processLandmarks(separatedLandmarks(), 1500);
+  assert.equal(controller.getTrailPoints().length, 2);
   assert.deepEqual(states, ['recording', 'paused']);
 });
 
-test('controller records only index fingertip points while recording', () => {
-  const canvas = {
-    width: 0,
-    height: 0,
-    getContext() {
-      return {
-        clearRect() {},
-        beginPath() {},
-        moveTo() {},
-        lineTo() {},
-        stroke() {},
-        set strokeStyle(value) {},
-        set lineWidth(value) {},
-        set lineCap(value) {},
-        set lineJoin(value) {}
-      };
-    }
-  };
+test('controller clears the screen when five fingers open', () => {
+  const states = [];
   const controller = createIndexFingerTrailController({
     video: { videoWidth: 640, videoHeight: 480 },
-    canvas,
+    canvas: createCanvas(),
     status: { textContent: '', dataset: {} },
     createHandLandmarker: async () => null,
     requestAnimationFrame: () => 0,
     cancelAnimationFrame: () => {},
+    onStatusChange: (state) => states.push(state),
     now: () => 0
   });
 
-  const openPalm = openPalmLandmarks();
-  const relaxedHand = relaxedHandLandmarks();
-  controller.processLandmarks(openPalm, 1000);
-  controller.processLandmarks(openPalm, 1500);
-  controller.processLandmarks(relaxedHand, 1600);
+  controller.processLandmarks(pinchedLandmarks(), 1000);
+  controller.processLandmarks(pinchedLandmarks(), 1150);
+  controller.processLandmarks(pinchedLandmarks(), 1250);
+  assert.equal(controller.getTrailPoints().length, 2);
 
-  assert.deepEqual(controller.getTrailPoints(), [
-    { x: 268.8, y: 297.6, timestamp: 1600 }
-  ]);
+  controller.processLandmarks(openPalmLandmarks(), 1400);
+  assert.equal(controller.isRecording(), false);
+  assert.deepEqual(controller.getTrailPoints(), []);
+  assert.equal(states.at(-1), 'cleared');
 });
