@@ -71,17 +71,17 @@ export function createCaptionController({
         const transcript = getTranscript(result);
         if (!transcript) continue;
 
-        recentTranscript = `${recentTranscript} ${transcript}`.trim();
-
         if (!result.isFinal) {
-          interimTranscript = `${interimTranscript} ${transcript}`.trim();
+          interimTranscript = transcript;
+        } else {
+          recentTranscript = transcript;
         }
       }
 
       const visibleTranscript = interimTranscript || recentTranscript;
       setCaption(output, visibleTranscript || EMPTY_CAPTION, visibleTranscript ? 'active' : 'idle');
-      if (recentTranscript) {
-        onTranscript(visibleTranscript, recentTranscript);
+      if (visibleTranscript) {
+        onTranscript(visibleTranscript, recentTranscript || visibleTranscript);
       }
     };
 

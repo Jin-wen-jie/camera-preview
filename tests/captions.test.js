@@ -37,6 +37,16 @@ class FakeSpeechRecognition {
     });
   }
 
+  emitResults({ resultIndex = 0, results }) {
+    this.onresult?.({
+      resultIndex,
+      results: results.map(({ transcript, isFinal = false }) => ({
+        0: { transcript },
+        isFinal
+      }))
+    });
+  }
+
   emitEnd() {
     this.onend?.();
   }
@@ -149,4 +159,38 @@ test('caption controller replaces the visible caption with the latest sentence',
     { visibleTranscript: '第一句', recentTranscript: '第一句' },
     { visibleTranscript: '第二句', recentTranscript: '第二句' }
   ]);
+});
+
+test('caption controller ignores old final results when replacing captions', () => {
+  FakeSpeechRecognition.instances = [];
+  const output = { textContent: '', dataset: {} };
+  const status = { textContent: '', dataset: {} };
+  const transcripts = [];
+
+  const captions = createCaptionController({
+    SpeechRecognition: FakeSpeechRecognition,
+    output,
+    status,
+    onTranscript: (visibleTranscript, recentTranscript) => {
+      transcripts.push({ visibleTranscript, recentTranscript });
+    }
+  });
+
+  captions.start();
+  const recognition = FakeSpeechRecognition.instances[0];
+
+  recognition.emitResult({ transcript: 'old-one', isFinal: true });
+  recognition.emitResults({
+    resultIndex: 0,
+    results: [
+      { transcript: 'old-one', isFinal: true },
+      { transcript: 'new-two', isFinal: true }
+    ]
+  });
+
+  assert.equal(output.textContent, 'new-two');
+  assert.deepEqual(transcripts.at(-1), {
+    visibleTranscript: 'new-two',
+    recentTranscript: 'new-two'
+  });
 });
