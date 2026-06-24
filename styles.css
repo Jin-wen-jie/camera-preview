@@ -124,6 +124,13 @@ video {
   overflow: hidden;
 }
 
+.voice-effect-layer[data-effect="snow"] {
+  background:
+    linear-gradient(180deg, rgba(225, 244, 255, 0.3), transparent 52%),
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: storm-flash 3.2s ease both;
+}
+
 .voice-effect {
   position: absolute;
   display: inline-grid;
@@ -132,22 +139,58 @@ video {
   text-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
 }
 
+.voice-effect-impact {
+  position: absolute;
+  top: 24%;
+  left: 50%;
+  width: clamp(180px, 30vw, 420px);
+  aspect-ratio: 1;
+  border: 2px solid rgba(255, 111, 190, 0.68);
+  border-radius: 999px;
+  box-shadow:
+    0 0 36px rgba(255, 111, 190, 0.38),
+    inset 0 0 30px rgba(255, 255, 255, 0.18);
+  transform: translate(-50%, -50%) scale(0.2);
+  animation: impact-ring 3.2s ease-out both;
+}
+
+.voice-effect-impact--heart {
+  top: 30%;
+  border-color: rgba(255, 51, 95, 0.7);
+  box-shadow:
+    0 0 42px rgba(255, 51, 95, 0.46),
+    inset 0 0 30px rgba(255, 255, 255, 0.18);
+}
+
 .voice-effect--flower {
   top: 12%;
   left: 50%;
   color: #ff4fa3;
-  font-size: clamp(4rem, 10vw, 8rem);
+  font-size: clamp(5.5rem, 13vw, 10rem);
   transform: translateX(-50%);
-  animation: bloom-in 2.6s ease both;
+  filter: drop-shadow(0 0 18px rgba(255, 79, 163, 0.55));
+  animation: bloom-in 3.2s cubic-bezier(0.18, 0.9, 0.24, 1) both;
+}
+
+.voice-effect--petal {
+  top: 20%;
+  left: 50%;
+  color: #ffd1eb;
+  font-size: clamp(1.2rem, 3.2vw, 2.4rem);
+  transform: translate(-50%, -50%);
+  animation: petal-burst 3.2s cubic-bezier(0.14, 0.88, 0.24, 1) both;
+  animation-delay: calc(var(--i) * 24ms);
 }
 
 .voice-effect--heart {
-  top: 16%;
+  top: 24%;
   left: 50%;
   color: #ff335f;
-  font-size: clamp(3.5rem, 9vw, 7rem);
-  transform: translateX(-50%);
-  animation: pop-heart 2.6s ease both;
+  font-size: clamp(2.4rem, 6vw, 5.2rem);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 18px rgba(255, 51, 95, 0.46));
+  animation: heart-burst 3.2s cubic-bezier(0.15, 0.9, 0.26, 1) both;
+  animation-delay: calc(var(--i) * 36ms);
 }
 
 .voice-effect--snow {
@@ -155,8 +198,25 @@ video {
   left: calc((var(--i) * 5.7%) + 2%);
   color: rgba(255, 255, 255, 0.94);
   font-size: clamp(1.2rem, 3vw, 2.4rem);
-  animation: snow-fall 2.6s linear both;
-  animation-delay: calc(var(--i) * 80ms);
+  filter: drop-shadow(0 0 10px rgba(190, 232, 255, 0.48));
+  animation: snow-fall 3.2s linear both;
+  animation-delay: calc(var(--i) * 34ms);
+}
+
+@keyframes impact-ring {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.16);
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.35);
+  }
 }
 
 @keyframes bloom-in {
@@ -174,6 +234,22 @@ video {
   100% {
     opacity: 0;
     transform: translateX(-50%) scale(0.86) translateY(-18px);
+  }
+}
+
+@keyframes petal-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.16) rotate(0deg);
+  }
+
+  16% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(0.82) rotate(var(--r));
   }
 }
 
@@ -195,10 +271,41 @@ video {
   }
 }
 
+@keyframes heart-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.22);
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1.08) rotate(var(--r));
+  }
+}
+
+@keyframes storm-flash {
+  0% {
+    opacity: 0;
+  }
+
+  18%,
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
 @keyframes snow-fall {
   0% {
     opacity: 0;
-    transform: translateY(0) rotate(0deg);
+    transform: translateY(0) translateX(0) rotate(0deg);
   }
 
   16% {
@@ -207,7 +314,7 @@ video {
 
   100% {
     opacity: 0;
-    transform: translateY(92vh) rotate(220deg);
+    transform: translateY(92vh) translateX(var(--drift)) rotate(260deg);
   }
 }
 

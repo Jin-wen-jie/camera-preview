@@ -30,6 +30,9 @@ test('voice effects are layered over the camera preview', async () => {
   assert.match(css, /\.voice-effect-layer\s*\{[^}]*inset:\s*0/s);
   assert.match(css, /\.voice-effect-layer\s*\{[^}]*z-index:\s*4/s);
   assert.match(css, /\.voice-effect--flower\s*\{[^}]*top:\s*12%/s);
+  assert.match(css, /\.voice-effect-impact\s*\{[^}]*animation:\s*impact-ring/s);
+  assert.match(css, /\.voice-effect--petal\s*\{[^}]*animation:\s*petal-burst/s);
+  assert.match(css, /\.voice-effect-layer\[data-effect="snow"\]\s*\{[^}]*background:/s);
 });
 
 test('typed effect command controls are arranged as a compact input row', async () => {

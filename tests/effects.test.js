@@ -48,9 +48,10 @@ test('voice effect controller shows a flower when speech contains 开花', () =>
 
   assert.equal(result, 'flower');
   assert.equal(layer.dataset.effect, 'flower');
-  assert.equal(layer.children.length, 1);
-  assert.equal(layer.children[0].className, 'voice-effect voice-effect--flower');
-  assert.equal(layer.children[0].textContent, '✿');
+  assert.ok(layer.children.some((child) => child.className === 'voice-effect-impact'));
+  assert.ok(layer.children.some((child) => child.className === 'voice-effect voice-effect--flower'));
+  assert.ok(layer.children.some((child) => child.className === 'voice-effect voice-effect--petal'));
+  assert.ok(layer.children.length >= 20);
 });
 
 test('voice effect controller understands natural flower commands', () => {
@@ -89,6 +90,27 @@ test('voice effect controller shows snow when speech contains 下雪', () => {
 
   assert.equal(result, 'snow');
   assert.equal(layer.dataset.effect, 'snow');
-  assert.equal(layer.children.length, 18);
+  assert.equal(layer.children.length, 42);
   assert.ok(layer.children.every((child) => child.className === 'voice-effect voice-effect--snow'));
+});
+
+test('voice effect controller shows a heart burst when speech contains 爱心', () => {
+  const layer = createLayer();
+  const effects = createVoiceEffectController({
+    layer,
+    createElement,
+    timers: {
+      setTimeout() {
+        return 1;
+      },
+      clearTimeout() {}
+    }
+  });
+
+  const result = effects.triggerFromTranscript('给我来个爱心');
+
+  assert.equal(result, 'heart');
+  assert.equal(layer.dataset.effect, 'heart');
+  assert.ok(layer.children.some((child) => child.className === 'voice-effect-impact voice-effect-impact--heart'));
+  assert.ok(layer.children.filter((child) => child.className === 'voice-effect voice-effect--heart').length >= 10);
 });

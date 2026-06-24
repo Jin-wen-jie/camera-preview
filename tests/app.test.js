@@ -226,8 +226,9 @@ test('app triggers visual effects from recognized speech', async () => {
   FakeSpeechRecognition.instances[0].emitResult({ transcript: '开花', isFinal: false });
 
   assert.equal(effectLayer.dataset.effect, 'flower');
-  assert.equal(effectLayer.children.length, 1);
-  assert.equal(effectLayer.children[0].textContent, '✿');
+  assert.ok(effectLayer.children.length >= 20);
+  assert.ok(effectLayer.children.some((child) => child.className === 'voice-effect voice-effect--flower'));
+  assert.ok(effectLayer.children.some((child) => child.className === 'voice-effect voice-effect--petal'));
 });
 
 test('app triggers visual effects from typed commands', async () => {
@@ -243,7 +244,7 @@ test('app triggers visual effects from typed commands', async () => {
   effectForm.submit();
 
   assert.equal(effectLayer.dataset.effect, 'snow');
-  assert.equal(effectLayer.children.length, 18);
+  assert.equal(effectLayer.children.length, 42);
   assert.equal(effectStatus.textContent, '已执行：下雪');
   assert.equal(effectStatus.dataset.state, 'ready');
 });
