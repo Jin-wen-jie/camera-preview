@@ -2,8 +2,8 @@ const COMMANDS = [
   {
     type: 'effect',
     effect: 'flower',
-    label: '开花',
-    phrases: ['开花', '一朵花', '放花', '花朵', '头上花']
+    label: '花',
+    phrases: ['花']
   }
 ];
 

@@ -49,7 +49,7 @@ function readVector(child) {
   };
 }
 
-test('voice effect controller shows a flower when speech contains 开花', () => {
+test('voice effect controller shows a centered flower heart burst when speech contains 花', () => {
   const layer = createLayer();
   const effects = createVoiceEffectController({
     layer,
@@ -62,7 +62,7 @@ test('voice effect controller shows a flower when speech contains 开花', () =>
     }
   });
 
-  const result = effects.triggerFromTranscript('请在我头上开花');
+  const result = effects.triggerFromTranscript('花');
 
   assert.equal(result, 'flower');
   assert.equal(layer.dataset.effect, 'flower');
@@ -86,14 +86,19 @@ test('voice effect controller shows a flower when speech contains 开花', () =>
   const height = Math.max(...ys) - Math.min(...ys);
   assert.ok(width / height < 1.2);
 
+  const centerX = (Math.max(...xs) + Math.min(...xs)) / 2;
+  const centerY = (Math.max(...ys) + Math.min(...ys)) / 2;
+  assert.ok(Math.abs(centerX) < 0.25);
+  assert.ok(Math.abs(centerY) < 0.25);
+
   assert.ok(vectors.some(({ x, y }) => x < -20 && y < 2));
   assert.ok(vectors.some(({ x, y }) => x > 20 && y < 2));
   assert.ok(vectors.some(({ y }) => y < -12));
-  assert.ok(vectors.some(({ x, y }) => Math.abs(x) < 1 && y > 22));
-  assert.ok(vectors.some(({ x, y }) => Math.abs(x) < 1 && y > -8 && y < 0));
+  assert.ok(vectors.some(({ x, y }) => Math.abs(x) < 1 && y > 18));
+  assert.ok(vectors.some(({ x, y }) => Math.abs(x) < 1 && y > -12 && y < -8));
 });
 
-test('voice effect controller understands natural flower commands', () => {
+test('voice effect controller understands the one-character flower command', () => {
   const layer = createLayer();
   const effects = createVoiceEffectController({
     layer,
@@ -106,7 +111,7 @@ test('voice effect controller understands natural flower commands', () => {
     }
   });
 
-  const result = effects.triggerFromTranscript('在我头上放一朵花');
+  const result = effects.triggerFromTranscript('花');
 
   assert.equal(result, 'flower');
   assert.equal(layer.dataset.effect, 'flower');
@@ -125,7 +130,7 @@ test('voice effect controller positions flower burst at a supplied origin', () =
     }
   });
 
-  effects.triggerFromTranscript('开花', { origin: { x: 70, y: 23 } });
+  effects.triggerFromTranscript('花', { origin: { x: 70, y: 23 } });
 
   assert.equal(layer.style.values['--effect-x'], '70%');
   assert.equal(layer.style.values['--effect-y'], '23%');

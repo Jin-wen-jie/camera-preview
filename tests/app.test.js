@@ -241,6 +241,7 @@ async function loadAppWithFakes({
       handTrails,
       handStatus,
       dispatchedEvents,
+      windowListeners,
       beforeUnloadListeners
     };
   } finally {
@@ -328,7 +329,7 @@ test('app triggers flower effects from recognized speech', async () => {
   });
 
   captionStartButton.click();
-  FakeSpeechRecognition.instances[0].emitResult({ transcript: '开花', isFinal: false });
+  FakeSpeechRecognition.instances[0].emitResult({ transcript: '花', isFinal: false });
   await flushAsyncEffects();
 
   assert.equal(effectLayer.dataset.effect, 'flower');
@@ -346,12 +347,12 @@ test('app triggers flower effects from typed commands', async () => {
     }
   });
 
-  effectInput.value = '开花';
+  effectInput.value = '花';
   await effectForm.submit();
 
   assert.equal(effectLayer.dataset.effect, 'flower');
   assert.ok(effectLayer.children.length >= 20);
-  assert.match(effectStatus.textContent, /^已执行：开花/);
+  assert.match(effectStatus.textContent, /^已执行：花/);
   assert.equal(effectStatus.dataset.state, 'ready');
 });
 
@@ -395,12 +396,87 @@ test('app positions flower effects above a detected face from typed commands', a
     }
   });
 
-  effectInput.value = '在我头上放一朵花';
+  effectInput.value = '花';
   await effectForm.submit();
 
   assert.equal(effectLayer.dataset.effect, 'flower');
   assert.equal(effectLayer.style.values['--effect-x'], '70%');
   assert.equal(effectLayer.style.values['--effect-y'], '23%');
+});
+
+test('app executes recognized finger writing commands from the window event', async () => {
+  class FakeFaceDetector {
+    async detect() {
+      return [
+        {
+          boundingBox: { x: 200, y: 150, width: 200, height: 180 }
+        }
+      ];
+    }
+  }
+
+  const stream = { getTracks: () => [] };
+
+  const {
+    effectLayer,
+    voiceCommandText,
+    voiceCommandResult,
+    windowListeners
+  } = await loadAppWithFakes({
+    FaceDetector: FakeFaceDetector,
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  for (const listener of windowListeners['finger-writing-result'] || []) {
+    listener({
+      detail: {
+        source: 'finger-writing',
+        text: '花',
+        strokes: [[{ x: 120, y: 80, timestamp: 1000 }]],
+        createdAt: 1200
+      }
+    });
+  }
+  await flushAsyncEffects();
+
+  assert.equal(effectLayer.dataset.effect, 'flower');
+  assert.equal(voiceCommandText.textContent, '花');
+  assert.match(voiceCommandResult.textContent, /^已执行：花/);
+});
+
+test('app reports unrecognized finger writing commands without triggering effects', async () => {
+  const stream = { getTracks: () => [] };
+
+  const {
+    effectLayer,
+    voiceCommandText,
+    voiceCommandResult,
+    windowListeners
+  } = await loadAppWithFakes({
+    async getUserMedia() {
+      return stream;
+    }
+  });
+
+  for (const listener of windowListeners['finger-writing-result'] || []) {
+    listener({
+      detail: {
+        source: 'finger-writing',
+        text: '',
+        strokes: [[{ x: 120, y: 80, timestamp: 1000 }]],
+        createdAt: 1200
+      }
+    });
+  }
+  await flushAsyncEffects();
+
+  assert.equal(effectLayer.dataset.effect, undefined);
+  assert.equal(effectLayer.children.length, 0);
+  assert.equal(voiceCommandText.textContent, '手写结果');
+  assert.equal(voiceCommandResult.textContent, '没有识别到可执行指令');
+  assert.equal(voiceCommandResult.dataset.state, 'error');
 });
 
 test('app stops hand trails when the camera stops', async () => {

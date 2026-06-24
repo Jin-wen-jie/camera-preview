@@ -4,15 +4,10 @@ import assert from 'node:assert/strict';
 import { parseVoiceCommand } from '../src/voice-commands.js';
 
 test('parseVoiceCommand recognizes flower effect commands', () => {
-  assert.deepEqual(parseVoiceCommand('在我头上开花'), {
+  assert.deepEqual(parseVoiceCommand('花'), {
     type: 'effect',
     effect: 'flower',
-    label: '开花'
-  });
-  assert.deepEqual(parseVoiceCommand('放一朵花'), {
-    type: 'effect',
-    effect: 'flower',
-    label: '开花'
+    label: '花'
   });
 });
 

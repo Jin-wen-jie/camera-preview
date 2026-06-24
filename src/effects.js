@@ -1,11 +1,35 @@
 const FLOWER_TRIGGER = {
-  phrases: ['开花', '一朵花', '放花', '花朵', '头上花'],
+  phrases: ['花'],
   type: 'flower',
   className: 'voice-effect voice-effect--flower',
   content: '🌸'
 };
 const HEART_PARTICLE = '❤';
 const HEART_PATH_SCALE = 1.35;
+const HEART_PARTICLE_COUNT = 36;
+
+function getHeartShapeY(angle) {
+  return (
+    13 * Math.cos(angle)
+    - 5 * Math.cos(2 * angle)
+    - 2 * Math.cos(3 * angle)
+    - Math.cos(4 * angle)
+  );
+}
+
+function getHeartPathCenterY(total) {
+  let minY = Infinity;
+  let maxY = -Infinity;
+
+  for (let index = 0; index < total; index += 1) {
+    const angle = (Math.PI * 2 * index) / total;
+    const y = -getHeartShapeY(angle) * HEART_PATH_SCALE;
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  }
+
+  return (minY + maxY) / 2;
+}
 
 function normalizeTranscript(text) {
   return String(text || '').replace(/\s+/g, '');
@@ -18,15 +42,11 @@ function setStyleIndex(element, index) {
 function setPetalVector(element, index, total) {
   const angle = (Math.PI * 2 * index) / total;
   const x = 16 * Math.sin(angle) ** 3;
-  const y = (
-    13 * Math.cos(angle)
-    - 5 * Math.cos(2 * angle)
-    - 2 * Math.cos(3 * angle)
-    - Math.cos(4 * angle)
-  );
+  const y = getHeartShapeY(angle);
+  const centerY = getHeartPathCenterY(total);
 
   element.style?.setProperty?.('--x', `${(x * HEART_PATH_SCALE).toFixed(2)}vmin`);
-  element.style?.setProperty?.('--y', `${((-y * HEART_PATH_SCALE) + 2).toFixed(2)}vmin`);
+  element.style?.setProperty?.('--y', `${((-y * HEART_PATH_SCALE) - centerY).toFixed(2)}vmin`);
   element.style?.setProperty?.('--r', `${Math.round((angle * 180) / Math.PI)}deg`);
 }
 
@@ -74,7 +94,7 @@ export function createVoiceEffectController({
   }
 
   function appendPetals() {
-    const petalCount = 36;
+    const petalCount = HEART_PARTICLE_COUNT;
     for (let index = 0; index < petalCount; index += 1) {
       const element = createElement('span');
       element.className = 'voice-effect voice-effect--petal';
