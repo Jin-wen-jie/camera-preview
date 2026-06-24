@@ -44,7 +44,6 @@ export function createCaptionController({
   let recognition = null;
   let isRunning = false;
   let shouldKeepListening = false;
-  let finalTranscript = '';
 
   function setRunning(nextIsRunning) {
     if (isRunning === nextIsRunning) return;
@@ -74,14 +73,12 @@ export function createCaptionController({
 
         recentTranscript = `${recentTranscript} ${transcript}`.trim();
 
-        if (result.isFinal) {
-          finalTranscript = `${finalTranscript} ${transcript}`.trim();
-        } else {
+        if (!result.isFinal) {
           interimTranscript = `${interimTranscript} ${transcript}`.trim();
         }
       }
 
-      const visibleTranscript = `${finalTranscript} ${interimTranscript}`.trim();
+      const visibleTranscript = interimTranscript || recentTranscript;
       setCaption(output, visibleTranscript || EMPTY_CAPTION, visibleTranscript ? 'active' : 'idle');
       if (recentTranscript) {
         onTranscript(visibleTranscript, recentTranscript);
@@ -124,7 +121,6 @@ export function createCaptionController({
     start() {
       if (isRunning) return true;
 
-      finalTranscript = '';
       shouldKeepListening = true;
       recognition = createRecognition();
       setCaption(output, EMPTY_CAPTION, 'idle');

@@ -117,7 +117,36 @@ test('caption controller restarts recognition when the browser ends listening au
 
   secondRecognition.emitResult({ transcript: '第二句', isFinal: true });
 
-  assert.equal(output.textContent, '第一句 第二句');
+  assert.equal(output.textContent, '第二句');
   assert.equal(status.textContent, '正在听你说话');
   assert.equal(captions.isRunning, true);
+});
+
+test('caption controller replaces the visible caption with the latest sentence', () => {
+  FakeSpeechRecognition.instances = [];
+  const output = { textContent: '', dataset: {} };
+  const status = { textContent: '', dataset: {} };
+  const transcripts = [];
+
+  const captions = createCaptionController({
+    SpeechRecognition: FakeSpeechRecognition,
+    output,
+    status,
+    onTranscript: (visibleTranscript, recentTranscript) => {
+      transcripts.push({ visibleTranscript, recentTranscript });
+    }
+  });
+
+  captions.start();
+  const recognition = FakeSpeechRecognition.instances[0];
+
+  recognition.emitResult({ transcript: '第一句', isFinal: true });
+  assert.equal(output.textContent, '第一句');
+
+  recognition.emitResult({ transcript: '第二句', isFinal: true });
+  assert.equal(output.textContent, '第二句');
+  assert.deepEqual(transcripts, [
+    { visibleTranscript: '第一句', recentTranscript: '第一句' },
+    { visibleTranscript: '第二句', recentTranscript: '第二句' }
+  ]);
 });
