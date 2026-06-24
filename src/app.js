@@ -1,5 +1,5 @@
 import { startCamera, stopCamera } from './camera.js';
-import { createCaptionController } from './captions.js?v=keep-listening';
+import { createCaptionController } from './captions.js?v=replace-latest';
 import { createVoiceEffectController } from './effects.js?v=head-anchor';
 import { createFaceAnchorDetector } from './face.js?v=mediapipe-face';
 
