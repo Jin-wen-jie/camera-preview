@@ -36,6 +36,10 @@ class FakeSpeechRecognition {
       ]
     });
   }
+
+  emitEnd() {
+    this.onend?.();
+  }
 }
 
 test('caption controller starts speech recognition and shows live words', () => {
@@ -89,4 +93,31 @@ test('caption controller reports unsupported browsers clearly', () => {
   assert.equal(captions.start(), false);
   assert.equal(output.textContent, '当前浏览器不支持实时字幕');
   assert.equal(status.dataset.state, 'error');
+});
+
+test('caption controller restarts recognition when the browser ends listening automatically', () => {
+  FakeSpeechRecognition.instances = [];
+  const output = { textContent: '', dataset: {} };
+  const status = { textContent: '', dataset: {} };
+
+  const captions = createCaptionController({
+    SpeechRecognition: FakeSpeechRecognition,
+    output,
+    status
+  });
+
+  captions.start();
+  const firstRecognition = FakeSpeechRecognition.instances[0];
+  firstRecognition.emitResult({ transcript: '第一句', isFinal: true });
+  firstRecognition.emitEnd();
+
+  assert.equal(FakeSpeechRecognition.instances.length, 2);
+  const secondRecognition = FakeSpeechRecognition.instances[1];
+  assert.equal(secondRecognition.started, true);
+
+  secondRecognition.emitResult({ transcript: '第二句', isFinal: true });
+
+  assert.equal(output.textContent, '第一句 第二句');
+  assert.equal(status.textContent, '正在听你说话');
+  assert.equal(captions.isRunning, true);
 });

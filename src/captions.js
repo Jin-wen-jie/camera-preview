@@ -43,6 +43,7 @@ export function createCaptionController({
 
   let recognition = null;
   let isRunning = false;
+  let shouldKeepListening = false;
   let finalTranscript = '';
 
   function setRunning(nextIsRunning) {
@@ -96,9 +97,20 @@ export function createCaptionController({
     };
 
     instance.onend = () => {
-      if (!isRunning) return;
-      setStatus(status, '实时字幕已停止', 'idle');
-      setRunning(false);
+      if (!shouldKeepListening) {
+        setStatus(status, '实时字幕已停止', 'idle');
+        setRunning(false);
+        return;
+      }
+
+      recognition = createRecognition();
+      try {
+        recognition.start();
+      } catch {
+        shouldKeepListening = false;
+        setStatus(status, '实时字幕已停止，请重新开启', 'error');
+        setRunning(false);
+      }
     };
 
     return instance;
@@ -113,6 +125,7 @@ export function createCaptionController({
       if (isRunning) return true;
 
       finalTranscript = '';
+      shouldKeepListening = true;
       recognition = createRecognition();
       setCaption(output, EMPTY_CAPTION, 'idle');
       setStatus(status, '正在听你说话', 'ready');
@@ -123,6 +136,7 @@ export function createCaptionController({
         return true;
       } catch (error) {
         const detail = error?.message || '请重试';
+        shouldKeepListening = false;
         setStatus(status, `无法开启实时字幕：${detail}`, 'error');
         setRunning(false);
         return false;
@@ -131,10 +145,12 @@ export function createCaptionController({
     stop() {
       if (!recognition) {
         setStatus(status, '实时字幕未开启', 'idle');
+        shouldKeepListening = false;
         setRunning(false);
         return;
       }
 
+      shouldKeepListening = false;
       recognition.stop();
     }
   };
