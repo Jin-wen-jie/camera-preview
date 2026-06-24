@@ -21,6 +21,9 @@
           <div class="preview-placeholder" aria-hidden="true">
             <span></span>
           </div>
+          <div class="caption-overlay" data-live-caption data-state="idle" aria-live="polite">
+            字幕将在这里显示
+          </div>
         </div>
       </section>
 
@@ -36,6 +39,15 @@
         <div class="actions" aria-label="摄像头控制">
           <button class="primary-button" type="button" data-camera-start>开启摄像头</button>
           <button class="secondary-button" type="button" data-camera-stop>停止</button>
+        </div>
+
+        <div class="status-row caption-status" data-caption-status data-state="idle" role="status" aria-live="polite">
+          实时字幕未开启
+        </div>
+
+        <div class="actions" aria-label="实时字幕控制">
+          <button class="secondary-button" type="button" data-caption-start>开启字幕</button>
+          <button class="secondary-button" type="button" data-caption-stop>停止字幕</button>
         </div>
 
         <p class="hint">如果看不到权限弹窗，请确认正在通过 localhost 或 HTTPS 打开页面。</p>

@@ -16,7 +16,13 @@ test('startCamera requests webcam video and shows the stream', async () => {
       return stream;
     }
   };
-  const video = { srcObject: null };
+  let playCalled = false;
+  const video = {
+    srcObject: null,
+    async play() {
+      playCalled = true;
+    }
+  };
   const status = { textContent: '', dataset: {} };
 
   const result = await startCamera({ mediaDevices, video, status });
@@ -24,6 +30,7 @@ test('startCamera requests webcam video and shows the stream', async () => {
   assert.deepEqual(calls, [{ video: true, audio: false }]);
   assert.equal(result, stream);
   assert.equal(video.srcObject, stream);
+  assert.equal(playCalled, true);
   assert.equal(status.textContent, '摄像头已开启');
   assert.equal(status.dataset.state, 'ready');
 });
@@ -59,6 +66,6 @@ test('startCamera reports a clear message when webcam access is unavailable', as
     /当前浏览器不支持摄像头访问/
   );
   assert.equal(video.srcObject, null);
-  assert.equal(status.textContent, '当前浏览器不支持摄像头访问');
+  assert.equal(status.textContent, '当前浏览器不支持摄像头访问，请使用 Chrome、Edge 或 Safari 打开 HTTPS 页面');
   assert.equal(status.dataset.state, 'error');
 });
