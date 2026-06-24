@@ -56,6 +56,13 @@ function separatedLandmarks() {
   return points;
 }
 
+function pinchedAt(x, y) {
+  const points = pinchedLandmarks();
+  points[4] = landmark(x - 0.01, y + 0.01);
+  points[8] = landmark(x, y);
+  return points;
+}
+
 function createCanvas() {
   return {
     width: 0,
@@ -162,4 +169,43 @@ test('controller clears the screen when five fingers open', () => {
   assert.equal(controller.isRecording(), false);
   assert.deepEqual(controller.getTrailPoints(), []);
   assert.equal(states.at(-1), 'cleared');
+});
+
+test('controller emits a finger writing result when open palm finishes writing', () => {
+  const results = [];
+  const controller = createIndexFingerTrailController({
+    video: { videoWidth: 640, videoHeight: 480 },
+    canvas: createCanvas(),
+    status: { textContent: '', dataset: {} },
+    createHandLandmarker: async () => null,
+    requestAnimationFrame: () => 0,
+    cancelAnimationFrame: () => {},
+    onWritingResult: (result) => results.push(result),
+    now: () => 1800
+  });
+
+  const firstStroke = pinchedAt(0.40, 0.30);
+  const secondPoint = pinchedAt(0.45, 0.34);
+  const secondStroke = pinchedAt(0.52, 0.38);
+
+  controller.processLandmarks(firstStroke, 1000);
+  controller.processLandmarks(firstStroke, 1150);
+  controller.processLandmarks(secondPoint, 1250);
+  controller.processLandmarks(separatedLandmarks(), 1400);
+  controller.processLandmarks(secondStroke, 1600);
+  controller.processLandmarks(secondStroke, 1750);
+  controller.processLandmarks(openPalmLandmarks(), 1800);
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].source, 'finger-writing');
+  assert.equal(results[0].text, '');
+  assert.equal(results[0].createdAt, 1800);
+  assert.equal(results[0].strokes.length, 2);
+  assert.deepEqual(results[0].strokes[0], [
+    { x: 256, y: 144, timestamp: 1150 },
+    { x: 288, y: 163.20000000000002, timestamp: 1250 }
+  ]);
+  assert.deepEqual(results[0].strokes[1], [
+    { x: 332.8, y: 182.4, timestamp: 1750 }
+  ]);
 });

@@ -137,6 +137,8 @@ async function loadAppWithFakes({
   const captionStartButton = createButton();
   const captionStopButton = createButton();
   const beforeUnloadListeners = [];
+  const windowListeners = {};
+  const dispatchedEvents = [];
 
   const selectors = {
     '[data-camera-shell]': cameraShell,
@@ -191,7 +193,23 @@ async function loadAppWithFakes({
     addEventListener(type, listener) {
       if (type === 'beforeunload') {
         beforeUnloadListeners.push(listener);
+        return;
       }
+      windowListeners[type] ??= [];
+      windowListeners[type].push(listener);
+    },
+    dispatchEvent(event) {
+      dispatchedEvents.push(event);
+      for (const listener of windowListeners[event.type] || []) {
+        listener(event);
+      }
+      return true;
+    }
+  };
+  globalThis.CustomEvent = class CustomEvent {
+    constructor(type, options = {}) {
+      this.type = type;
+      this.detail = options.detail;
     }
   };
   globalThis.requestAnimationFrame = requestAnimationFrame;
@@ -222,6 +240,7 @@ async function loadAppWithFakes({
       captionStopButton,
       handTrails,
       handStatus,
+      dispatchedEvents,
       beforeUnloadListeners
     };
   } finally {

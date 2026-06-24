@@ -123,7 +123,8 @@ export function createIndexFingerTrailController({
   now = () => globalThis.performance?.now?.() || Date.now(),
   requestAnimationFrame = globalThis.requestAnimationFrame?.bind(globalThis),
   cancelAnimationFrame = globalThis.cancelAnimationFrame?.bind(globalThis),
-  onStatusChange = () => {}
+  onStatusChange = () => {},
+  onWritingResult = () => {}
 }) {
   let detector = null;
   let detectorPromise = null;
@@ -131,6 +132,8 @@ export function createIndexFingerTrailController({
   let recording = false;
   let pinchSince = null;
   let trailPoints = [];
+  let strokes = [];
+  let currentStroke = null;
   let lastVideoTime = -1;
   const context = canvas?.getContext?.('2d') || null;
 
@@ -177,17 +180,46 @@ export function createIndexFingerTrailController({
     const tip = getIndexFingerTip(landmarks);
     if (!tip || !canvas) return;
     sizeCanvas();
-    trailPoints.push({
+    const point = {
       x: tip.x * canvas.width,
       y: tip.y * canvas.height,
       timestamp
-    });
+    };
+    trailPoints.push(point);
+    if (!currentStroke) {
+      currentStroke = [];
+      strokes.push(currentStroke);
+    }
+    currentStroke.push(point);
+  }
+
+  function buildWritingResult(timestamp) {
+    const completedStrokes = strokes
+      .map((stroke) => stroke.map((point) => ({ ...point })))
+      .filter((stroke) => stroke.length > 0);
+
+    if (!completedStrokes.length) {
+      return null;
+    }
+
+    return {
+      source: 'finger-writing',
+      text: '',
+      strokes: completedStrokes,
+      createdAt: timestamp
+    };
   }
 
   function clearTrail(timestamp) {
+    const result = buildWritingResult(timestamp);
+    if (result) {
+      onWritingResult(result);
+    }
     recording = false;
     pinchSince = null;
     trailPoints = [];
+    strokes = [];
+    currentStroke = null;
     updateStatus('五指张开已清屏', 'cleared');
     draw(timestamp);
   }
@@ -207,6 +239,7 @@ export function createIndexFingerTrailController({
       pinchSince = null;
       if (recording) {
         recording = false;
+        currentStroke = null;
         updateStatus('分开已暂停', 'paused');
       }
     }
@@ -278,6 +311,8 @@ export function createIndexFingerTrailController({
       recording = false;
       pinchSince = null;
       trailPoints = [];
+      strokes = [];
+      currentStroke = null;
       draw();
       updateStatus('手势识别已停止', 'idle');
     },

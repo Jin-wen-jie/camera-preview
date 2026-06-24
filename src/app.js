@@ -2,6 +2,7 @@ import { startCamera, stopCamera } from './camera.js';
 import { createCaptionController } from './captions.js?v=replace-latest-2';
 import { createVoiceEffectController } from './effects.js?v=index-finger-trail';
 import { createFaceAnchorDetector } from './face.js?v=robust-face';
+import { dispatchFingerWritingResult } from './finger-writing-events.js?v=finger-writing-result';
 import { createIndexFingerTrailController } from './hands.js?v=index-finger-trail';
 import { parseVoiceCommand } from './voice-commands.js?v=index-finger-trail';
 
@@ -124,7 +125,8 @@ function ensureHandTrailController() {
     handTrailController = createIndexFingerTrailController({
       video,
       canvas: handTrailCanvas,
-      status: handStatus
+      status: handStatus,
+      onWritingResult: dispatchFingerWritingResult
     });
   }
 
