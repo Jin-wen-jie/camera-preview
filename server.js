@@ -26,6 +26,12 @@ function resolveRequestPath(requestUrl) {
     return null;
   }
 
+  // 阻止敏感文件被公开访问
+  const basename = path.basename(resolved);
+  if (basename.startsWith('.') || basename === 'server.js') {
+    return null;
+  }
+
   return resolved;
 }
 
@@ -46,9 +52,17 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
-    response.writeHead(200, {
-      'Content-Type': contentTypes.get(path.extname(filePath)) || 'application/octet-stream'
-    });
+    const headers = {
+      'Content-Type': contentTypes.get(path.extname(filePath)) || 'application/octet-stream',
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': 'no-cache',
+      'Referrer-Policy': 'no-referrer-when-downgrade',
+      'X-Frame-Options': 'DENY'
+    };
+    if (request.url === '/' || path.basename(filePath) === 'index.html') {
+      headers['Content-Security-Policy'] = "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'";
+    }
+    response.writeHead(200, headers);
     createReadStream(filePath).pipe(response);
   } catch {
     response.writeHead(404);

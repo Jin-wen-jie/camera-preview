@@ -44,31 +44,37 @@ export async function startCamera({ mediaDevices, video, status }) {
   }
 
   setStatus(status, '正在请求摄像头权限...', 'loading');
+  if (video?.dataset) video.dataset.state = 'loading';
 
   try {
     const stream = await mediaDevices.getUserMedia({
       video: preferredVideoConstraints,
       audio: false
     });
-    video.srcObject = stream;
+    if (video) video.srcObject = stream;
     await boostVideoTrack(stream);
-    await video.play?.();
+    await video?.play?.();
+    if (video?.dataset) video.dataset.state = 'ready';
     setStatus(status, formatCameraReadyMessage(stream), 'ready');
     return stream;
   } catch (error) {
+    if (video?.dataset) video.dataset.state = 'error';
     const message = error?.name === 'NotAllowedError'
       ? '摄像头权限被拒绝，请点击地址栏左侧图标重新允许摄像头'
       : `无法打开摄像头：${error?.message || '请确认设备未被其他软件占用'}`;
-    video.srcObject = null;
+    if (video) video.srcObject = null;
     setStatus(status, message, 'error');
-    throw new Error(message, { cause: error });
+    const err = new Error(message);
+    try { err.cause = error; } catch { /* ignore */ }
+    throw err;
   }
 }
 
-export function stopCamera({ stream, video, status }) {
+export function stopCamera({ stream, video, status } = {}) {
   stream?.getTracks?.().forEach((track) => track.stop());
   if (video) {
     video.srcObject = null;
+    if (video.dataset) video.dataset.state = 'idle';
   }
-  setStatus(status, '摄像头已停止', 'idle');
+  if (status) setStatus(status, '摄像头已停止', 'idle');
 }

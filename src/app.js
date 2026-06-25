@@ -5,24 +5,29 @@ import { startCamera, stopCamera } from './camera.js?v=camera-voice';
 
 // ─── DOM elements ────────────────────────────────────────
 
-const captionOverlay = document.querySelector('[data-live-caption]');
+const $ = (sel) => document.querySelector(sel);
 
-const captionStartButton = document.querySelector('[data-caption-start]');
-const captionStopButton = document.querySelector('[data-caption-stop]');
-const captionStatus = document.querySelector('[data-caption-status] strong');
+const captionOverlay = $('[data-live-caption]');
 
-const effectForm = document.querySelector('[data-effect-form]');
-const effectInput = document.querySelector('[data-effect-input]');
-const effectStatusRow = document.querySelector('[data-effect-status]');
+const captionStartButton = $('[data-caption-start]');
+const captionStopButton = $('[data-caption-stop]');
+const captionStatus = $('[data-caption-status] strong');
+
+const effectForm = $('[data-effect-form]');
+const effectInput = $('[data-effect-input]');
+const effectStatusRow = $('[data-effect-status]');
 const effectStatus = effectStatusRow?.querySelector('strong');
 
-const voiceCommandText = document.querySelector('[data-voice-command-text]');
-const voiceCommandResult = document.querySelector('[data-voice-command-result]');
+const voiceCommandText = $('[data-voice-command-text]');
+const voiceCommandResult = $('[data-voice-command-result]');
 
-const effectLayer = document.querySelector('[data-voice-effects]');
+const effectLayer = $('[data-voice-effects]');
 
-const video = document.querySelector('[data-camera-preview]');
-const cameraStatus = document.querySelector('[data-camera-status] strong');
+const video = $('[data-camera-preview]');
+const cameraStatus = $('[data-camera-status] strong');
+const mirrorToggle = $('[data-mirror-toggle]');
+
+let _cameraStream = null;
 
 // ─── Status helpers ──────────────────────────────────────
 
@@ -106,27 +111,29 @@ const captions = createCaptionController({
   }
 });
 
-captionStartButton.addEventListener('click', () => captions.start());
-captionStopButton.addEventListener('click', () => captions.stop());
+if (captionStartButton) captionStartButton.addEventListener('click', () => captions.start());
+if (captionStopButton) captionStopButton.addEventListener('click', () => captions.stop());
 
 // ─── Typed command form ──────────────────────────────────
 
-effectForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const text = effectInput.value.trim();
-  if (!text) return;
+if (effectForm) {
+  effectForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const text = effectInput.value.trim();
+    if (!text) return;
 
-  const command = parseVoiceCommand(text);
-  if (!command) {
-    setEffectStatus('未识别的指令', 'error');
-    return;
-  }
+    const command = parseVoiceCommand(text);
+    if (!command) {
+      setEffectStatus('未识别的指令', 'error');
+      return;
+    }
 
-  setEffectStatus('执行中…', 'loading');
-  const result = await executeVoiceCommand(command, text);
-  setEffectStatus(result.text, result.state);
-  effectInput.value = '';
-});
+    setEffectStatus('执行中…', 'loading');
+    const result = await executeVoiceCommand(command, text);
+    setEffectStatus(result.text, result.state);
+    effectInput.value = '';
+  });
+}
 
 // ─── Initial state ───────────────────────────────────────
 
@@ -139,4 +146,68 @@ startCamera({
   mediaDevices: navigator.mediaDevices,
   video,
   status: cameraStatus
-}).catch(() => {});
+}).then((stream) => {
+  _cameraStream = stream;
+}).catch((err) => {
+  console.warn('摄像头启动失败:', err.message);
+  if (cameraStatus) {
+    cameraStatus.textContent = '摄像头不可用';
+    cameraStatus.dataset.state = 'error';
+  }
+});
+
+// ─── Keyboard shortcuts ──────────────────────────────────
+
+const KEYBOARD_SHORTCUTS = {
+  'f': { key: 'flower' },
+  's': { key: 'snow' },
+  'h': { key: 'heart' },
+  'Escape': { key: 'clear' }
+};
+
+const SHORTCUT_HINT = document.querySelector('[data-shortcut-hint]');
+
+document.addEventListener('keydown', (event) => {
+  // Ignore when user is typing in input
+  if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+
+  const shortcut = KEYBOARD_SHORTCUTS[event.key];
+  if (!shortcut) return;
+
+  event.preventDefault();
+
+  if (shortcut.key === 'clear') {
+    voiceEffects.clear();
+    setEffectStatus('特效已清除', 'success');
+    setVoiceCommandStatus('键盘快捷键', '已清除', 'success');
+  } else {
+    voiceEffects.triggerByKey(shortcut.key);
+    const label = EFFECT_LABELS[shortcut.key] || shortcut.key;
+    setEffectStatus(`已执行：${label}`, 'success');
+    setVoiceCommandStatus(`键盘 [${event.key.toUpperCase()}]`, label, 'success');
+  }
+});
+
+// ─── Mirror toggle ────────────────────────────────────────
+
+if (mirrorToggle && video) {
+  mirrorToggle.addEventListener('click', () => {
+    const isMirrored = video.dataset.mirrored === 'true';
+    if (isMirrored) {
+      delete video.dataset.mirrored;
+      delete mirrorToggle.dataset.active;
+    } else {
+      video.dataset.mirrored = 'true';
+      mirrorToggle.dataset.active = '';
+    }
+  });
+}
+
+// ─── Cleanup on unload ────────────────────────────────────
+
+window.addEventListener('pagehide', () => {
+  stopCamera({ stream: _cameraStream, video, status: cameraStatus });
+});
+window.addEventListener('beforeunload', () => {
+  stopCamera({ stream: _cameraStream, video, status: cameraStatus });
+});

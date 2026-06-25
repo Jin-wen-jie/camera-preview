@@ -38,6 +38,23 @@ export function createCaptionController({
   let recognition = null;
   let isRunning = false;
   let shouldKeepListening = false;
+  let retryDelay = 1000; // Exponential backoff: 1s → 2s → 4s → 8s
+
+  function retryLater() {
+    if (!shouldKeepListening) return;
+    setTimeout(() => {
+      if (!shouldKeepListening) return;
+      recognition = createRecognition();
+      try {
+        recognition.start();
+      } catch {
+        retryDelay = Math.min(retryDelay * 2, 8000);
+        setStatus(status, `重连中 (${Math.round(retryDelay / 1000)}s)…`, 'loading');
+        retryLater();
+      }
+    }, retryDelay);
+    retryDelay = Math.min(retryDelay * 2, 8000);
+  }
 
   function setRunning(nextIsRunning) {
     if (isRunning === nextIsRunning) return;
@@ -52,6 +69,7 @@ export function createCaptionController({
     instance.lang = language;
 
     instance.onstart = () => {
+      retryDelay = 1000; // Reset backoff on successful connection
       setStatus(status, '正在听你说话', 'ready');
       setRunning(true);
     };
@@ -80,11 +98,17 @@ export function createCaptionController({
     };
 
     instance.onerror = (event) => {
-      const message = event?.error === 'not-allowed'
-        ? '麦克风权限被拒绝，请点击地址栏左侧图标重新允许麦克风'
-        : '实时字幕识别出错，请重新开启字幕';
-      setStatus(status, message, 'error');
+      if (event?.error === 'not-allowed') {
+        shouldKeepListening = false;
+        setStatus(status, '麦克风权限被拒绝，请点击地址栏左侧图标重新允许麦克风', 'error');
+        setRunning(false);
+        return;
+      }
+
+      // Transient error — retry with backoff
+      setStatus(status, `识别出错，即将重试…`, 'loading');
       setRunning(false);
+      retryLater();
     };
 
     instance.onend = () => {
@@ -94,14 +118,8 @@ export function createCaptionController({
         return;
       }
 
-      recognition = createRecognition();
-      try {
-        recognition.start();
-      } catch {
-        shouldKeepListening = false;
-        setStatus(status, '实时字幕已停止，请重新开启', 'error');
-        setRunning(false);
-      }
+      // Use exponential backoff when reconnecting
+      retryLater();
     };
 
     return instance;

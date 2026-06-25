@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#4f46e5">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -13,7 +14,13 @@
 <main class="app-shell">
     <section class="effect-area">
         <div class="preview-frame">
-            <video class="camera-preview" data-camera-preview autoplay playsinline></video>
+            <video class="camera-preview" data-camera-preview autoplay playsinline muted></video>
+            <button class="mirror-toggle" data-mirror-toggle type="button" aria-label="翻转镜像">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+            </button>
         </div>
         <div class="voice-effect-layer" data-voice-effects aria-hidden="true"></div>
         <div class="caption-overlay" data-live-caption data-state="idle" aria-live="polite">
@@ -44,18 +51,18 @@
             <span>字幕</span>
             <strong data-state="idle">未启动</strong>
         </div>
-        <button class="primary-button" data-caption-start>开启字幕</button>
-        <button class="secondary-button" data-caption-stop disabled>关闭字幕</button>
+        <button class="primary-button" data-caption-start type="button">开启字幕</button>
+        <button class="secondary-button" data-caption-stop disabled type="button">关闭字幕</button>
 
         <form class="effect-command" data-effect-form>
-            <span class="effect-command-label">手动输入</span>
+            <label class="effect-command-label" for="effect-command-input">手动输入</label>
             <div class="effect-command-row">
                 <input
                     class="effect-command-input"
                     type="text"
+                    id="effect-command-input"
                     data-effect-input
                     placeholder="输入「花」"
-                    aria-label="输入指令触发特效"
                 >
                 <button class="primary-button" type="submit" data-effect-submit>执行</button>
             </div>
@@ -64,7 +71,7 @@
             </div>
         </form>
 
-        <p class="hint">浏览器需允许麦克风权限 · 推荐 Chrome</p>
+        <p class="hint" data-shortcut-hint>键盘快捷键：<kbd>F</kbd> 花 · <kbd>S</kbd> 雪 · <kbd>H</kbd> 心 · <kbd>Esc</kbd> 清除 · 浏览器需允许麦克风权限 · 推荐 Chrome</p>
     </aside>
 </main>
 

@@ -111,3 +111,19 @@ test('startCamera reports a clear message when webcam access is unavailable', as
   assert.equal(status.textContent, '当前浏览器不支持摄像头访问，请使用 Chrome、Edge 或 Safari 打开 HTTPS 页面');
   assert.equal(status.dataset.state, 'error');
 });
+
+test('startCamera sets video dataset state to loading initially', async () => {
+  const mediaDevices = {
+    async getUserMedia() { return { getTracks() { return []; } }; }
+  };
+  const video = { srcObject: null, async play() {}, dataset: {} };
+  const status = { textContent: '', dataset: {} };
+  await startCamera({ mediaDevices, video, status });
+  assert.equal(video.dataset.state, 'ready');
+});
+
+test('stopCamera with no arguments does not throw', () => {
+  stopCamera();
+  stopCamera({});
+  assert.ok(true);
+});

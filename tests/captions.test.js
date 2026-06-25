@@ -105,7 +105,7 @@ test('caption controller reports unsupported browsers clearly', () => {
   assert.equal(status.dataset.state, 'error');
 });
 
-test('caption controller restarts recognition when the browser ends listening automatically', () => {
+test('caption controller restarts recognition when the browser ends listening automatically', async () => {
   FakeSpeechRecognition.instances = [];
   const output = { textContent: '', dataset: {} };
   const status = { textContent: '', dataset: {} };
@@ -120,6 +120,9 @@ test('caption controller restarts recognition when the browser ends listening au
   const firstRecognition = FakeSpeechRecognition.instances[0];
   firstRecognition.emitResult({ transcript: '第一句', isFinal: true });
   firstRecognition.emitEnd();
+
+  // Reconnection uses setTimeout with 1s backoff — wait for it
+  await new Promise((resolve) => setTimeout(resolve, 1100));
 
   assert.equal(FakeSpeechRecognition.instances.length, 2);
   const secondRecognition = FakeSpeechRecognition.instances[1];

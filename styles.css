@@ -10,6 +10,7 @@
   --brand-hover: #4338ca;
   --success: #16a34a;
   --error: #dc2626;
+  --effect-bg: #151a1f;
   --radius: 12px;
   --shadow: 0 0 0 1px var(--border);
   --font-stack: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -37,7 +38,7 @@ button, input { font: inherit; }
 
 .effect-area {
   position: relative;
-  background: #151a1f;
+  background: var(--effect-bg);
   min-height: 100vh;
 }
 
@@ -46,7 +47,7 @@ button, input { font: inherit; }
   overflow: hidden;
   aspect-ratio: 16 / 10;
   border-radius: 8px;
-  background: #151a1f;
+  background: var(--effect-bg);
   box-shadow: var(--shadow);
 }
 
@@ -56,6 +57,46 @@ button, input { font: inherit; }
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.camera-preview[data-mirrored] {
+  transform: scaleX(-1);
+}
+
+/* ─── Mirror toggle button ──────────────────────────────── */
+
+.mirror-toggle {
+  position: absolute;
+  z-index: 15;
+  bottom: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  border: none;
+  color: rgba(255,255,255,0.85);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.mirror-toggle:hover { background: rgba(0,0,0,0.6); color: #fff; }
+.mirror-toggle:active { transform: scale(0.9); }
+.mirror-toggle:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.mirror-toggle[data-active] {
+  background: rgba(79,70,229,0.55);
+  color: #fff;
+}
+.mirror-toggle[data-active]:hover {
+  background: rgba(79,70,229,0.7);
 }
 
 .control-panel {
@@ -83,6 +124,7 @@ h1 { font-size: 1.5rem; font-weight: 700; }
   top: 0;
   pointer-events: none;
   contain: layout style paint;
+  will-change: transform, opacity;
   font-size: var(--font-size, 36px);
   line-height: 1;
   transform-origin: center center;
@@ -210,6 +252,25 @@ h1 { font-size: 1.5rem; font-weight: 700; }
 .caption-overlay[data-state="error"] { color: var(--error); }
 .caption-overlay[data-state="active"] { opacity: 1; }
 
+/* ─── Camera loading state ────────────────────────────────── */
+
+.camera-preview[data-state="loading"] {
+  filter: brightness(0.3);
+}
+.preview-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--effect-bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 2;
+}
+.preview-frame:has(.camera-preview[data-state="loading"])::after {
+  opacity: 0.6;
+}
+
 /* ─── Voice Command Panel ──────────────────────────────── */
 
 .voice-command-panel {
@@ -275,9 +336,14 @@ button {
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
 }
 button:disabled { opacity: 0.5; cursor: default; }
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
 
 .primary-button {
   background: var(--brand);
@@ -285,9 +351,17 @@ button:disabled { opacity: 0.5; cursor: default; }
   border-color: var(--brand);
 }
 .primary-button:hover:not(:disabled) { background: var(--brand-hover); }
+.primary-button:active:not(:disabled) {
+  background: #3730a3;
+  transform: scale(0.97);
+}
 
 .secondary-button { background: var(--surface); }
 .secondary-button:hover:not(:disabled) { background: #f0f0f0; }
+.secondary-button:active:not(:disabled) {
+  background: #e5e5e5;
+  transform: scale(0.97);
+}
 
 /* ─── Hint ─────────────────────────────────────────────── */
 
@@ -298,8 +372,31 @@ button:disabled { opacity: 0.5; cursor: default; }
   padding-top: 16px;
   border-top: 1px solid var(--border);
 }
+.hint kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  font-size: 0.72rem;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 1px 0 var(--border);
+  line-height: 1.4;
+}
 
 /* ─── Responsive ───────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-effect--falling-flower,
+  .voice-effect--falling-snow,
+  .voice-effect--falling-heart,
+  .voice-effect-impact {
+    animation: none !important;
+    opacity: 0;
+  }
+}
 
 @media (max-width: 860px) {
   .app-shell {

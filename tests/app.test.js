@@ -35,15 +35,15 @@ test('app has no remaining hand-trail references', async () => {
   assert.doesNotMatch(source, /trail/);
 });
 
-test('voice-commands module has flower, snow, heart and clear commands', async () => {
-  const source = await readFile(new URL('../src/voice-commands.js', import.meta.url), 'utf8');
+test('commands module has flower, snow, heart and clear commands', async () => {
+  const commands = await readFile(new URL('../src/commands.js', import.meta.url), 'utf8');
 
-  assert.match(source, /key:\s*'flower'/);
-  assert.match(source, /key:\s*'snow'/);
-  assert.match(source, /key:\s*'heart'/);
-  assert.match(source, /type:\s*'clear-effects'/);
-  assert.match(source, /'下雪'/);
-  assert.match(source, /'爱心'/);
+  assert.match(commands, /key:\s*'flower'/);
+  assert.match(commands, /key:\s*'snow'/);
+  assert.match(commands, /key:\s*'heart'/);
+  assert.match(commands, /type:\s*'clear-effects'/);
+  assert.match(commands, /'下雪'/);
+  assert.match(commands, /'爱心'/);
 });
 
 test('index.html has camera preview but no hand trail elements', async () => {
