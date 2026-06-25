@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import { startCamera, stopCamera } from '../src/camera.js';
 
 const preferredVideoConstraints = {
-  width: { ideal: 1280 },
-  height: { ideal: 720 },
-  frameRate: { ideal: 60, max: 60 }
+  width: { ideal: 1920 },
+  height: { ideal: 1080 },
+  frameRate: { ideal: 60 }
 };
 
 test('startCamera requests webcam video and shows the stream', async () => {

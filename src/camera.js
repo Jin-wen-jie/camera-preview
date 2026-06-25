@@ -1,9 +1,9 @@
 import { setStatus } from './utils.js';
 
 const preferredVideoConstraints = {
-  width: { ideal: 1280 },
-  height: { ideal: 720 },
-  frameRate: { ideal: 60, max: 60 }
+  width: { ideal: 1920 },
+  height: { ideal: 1080 },
+  frameRate: { ideal: 60 }
 };
 
 function formatCameraReadyMessage(stream) {
