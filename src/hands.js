@@ -105,7 +105,7 @@ function resolveActiveHand(landmarks) {
 }
 
 export function pruneTrailPoints(points, timestamp, retentionMs = TRAIL_RETENTION_MS) {
-  return points.filter((point) => point === null || timestamp - point.timestamp <= retentionMs);
+  return points.filter((point) => timestamp - point.timestamp <= retentionMs);
 }
 
 export async function createMediaPipeHandLandmarker({
@@ -166,63 +166,61 @@ export function createIndexFingerTrailController({
     }
   }
 
+  function drawSegment(segment, timestamp) {
+    if (segment.length < 2) return;
+
+    let prevMidX = segment[0].x;
+    let prevMidY = segment[0].y;
+
+    for (let i = 1; i < segment.length; i += 1) {
+      const previous = segment[i - 1];
+      const current = segment[i];
+      const age = timestamp - current.timestamp;
+      const alpha = Math.max(0, 1 - (age / TRAIL_RETENTION_MS));
+      context.strokeStyle = `rgba(255, 230, 92, ${alpha})`;
+      context.lineWidth = 5;
+      context.lineCap = 'round';
+      context.lineJoin = 'round';
+      context.beginPath();
+
+      if (i === 1) {
+        context.moveTo(previous.x, previous.y);
+        context.lineTo(current.x, current.y);
+      } else {
+        const midX = (previous.x + current.x) / 2;
+        const midY = (previous.y + current.y) / 2;
+        context.moveTo(prevMidX, prevMidY);
+        context.quadraticCurveTo(previous.x, previous.y, midX, midY);
+        prevMidX = midX;
+        prevMidY = midY;
+      }
+
+      context.stroke();
+    }
+  }
+
   function draw(timestamp = now()) {
     if (!context || !canvas) return;
     sizeCanvas();
     context.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (const stroke of strokes) {
+      const visible = stroke.filter(
+        (point) => timestamp - point.timestamp <= TRAIL_RETENTION_MS
+      );
+      if (visible.length > 0) {
+        drawSegment(visible, timestamp);
+      }
+    }
+
+    if (currentStroke) {
+      const visible = currentStroke.filter(
+        (point) => timestamp - point.timestamp <= TRAIL_RETENTION_MS
+      );
+      drawSegment(visible, timestamp);
+    }
+
     trailPoints = pruneTrailPoints(trailPoints, timestamp);
-
-    const points = trailPoints;
-    if (points.length < 2) return;
-
-    const segments = [];
-    let currentSegment = [];
-    for (const point of points) {
-      if (point === null) {
-        if (currentSegment.length > 0) {
-          segments.push(currentSegment);
-          currentSegment = [];
-        }
-      } else {
-        currentSegment.push(point);
-      }
-    }
-    if (currentSegment.length > 0) {
-      segments.push(currentSegment);
-    }
-
-    for (const segment of segments) {
-      if (segment.length < 2) continue;
-
-      let prevMidX = segment[0].x;
-      let prevMidY = segment[0].y;
-
-      for (let i = 1; i < segment.length; i += 1) {
-        const previous = segment[i - 1];
-        const current = segment[i];
-        const age = timestamp - current.timestamp;
-        const alpha = Math.max(0, 1 - (age / TRAIL_RETENTION_MS));
-        context.strokeStyle = `rgba(255, 230, 92, ${alpha})`;
-        context.lineWidth = 5;
-        context.lineCap = 'round';
-        context.lineJoin = 'round';
-        context.beginPath();
-
-        if (i === 1) {
-          context.moveTo(previous.x, previous.y);
-          context.lineTo(current.x, current.y);
-        } else {
-          const midX = (previous.x + current.x) / 2;
-          const midY = (previous.y + current.y) / 2;
-          context.moveTo(prevMidX, prevMidY);
-          context.quadraticCurveTo(previous.x, previous.y, midX, midY);
-          prevMidX = midX;
-          prevMidY = midY;
-        }
-
-        context.stroke();
-      }
-    }
   }
 
   function addIndexPoint(landmarks, timestamp) {
@@ -235,9 +233,6 @@ export function createIndexFingerTrailController({
       strokes.push(currentStroke);
       pointFilter.reset();
       lastSmoothedPoint = null;
-      if (trailPoints.length > 0) {
-        trailPoints.push(null);
-      }
     }
 
     const smoothed = pointFilter.filter(tip.x, tip.y, timestamp);
