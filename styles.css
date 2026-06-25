@@ -80,16 +80,21 @@ h1 { font-size: 1.5rem; font-weight: 700; }
 
 .voice-effect {
   position: absolute;
+  top: 0;
   pointer-events: none;
-  will-change: transform, opacity;
-  font-size: 36px;
-  line-height: 36px;
+  contain: layout style paint;
+  font-size: var(--font-size, 36px);
+  line-height: 1;
   transform-origin: center center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   left: var(--x, 50%);
 }
 
 .voice-effect-impact {
   position: absolute;
+  left: 50%;
+  top: 50%;
   width: 0;
   height: 0;
   border: 4px solid rgba(79, 70, 229, 0.6);
@@ -99,18 +104,22 @@ h1 { font-size: 1.5rem; font-weight: 700; }
 }
 
 .voice-effect--falling-flower {
-  animation: flower-fall var(--duration, 4.8s) ease-in forwards;
+  animation: flower-fall var(--duration, 4.8s) cubic-bezier(0.22, 0, 0.58, 1) forwards;
   animation-delay: var(--delay, 0ms);
 }
 
 .voice-effect--falling-snow {
-  animation: snow-fall var(--duration, 5.2s) ease-in forwards;
+  animation: snow-fall var(--duration, 5.2s) linear forwards;
   animation-delay: var(--delay, 0ms);
 }
 
 .voice-effect--falling-heart {
-  animation: heart-fall var(--duration, 4.5s) ease-in forwards;
+  animation: heart-fall var(--duration, 4.5s) cubic-bezier(0.33, 0, 0.66, 1) forwards;
   animation-delay: var(--delay, 0ms);
+}
+
+.voice-effect-impact {
+  animation: impact-ring 1.2s ease-out forwards;
 }
 
 @keyframes impact-ring {
@@ -119,27 +128,66 @@ h1 { font-size: 1.5rem; font-weight: 700; }
 }
 
 @keyframes flower-fall {
-  0%   {
-    transform: translateY(-5vh) translateX(0) rotate(0deg) scale(var(--scale, 0.85));
-    opacity: var(--opacity, 0.85);
+  0% {
+    transform: translate3d(0, var(--start-y, -12vh), 0) rotate(0deg) scale(var(--scale, 0.7));
+    opacity: 0;
   }
-  25%  { opacity: var(--opacity, 0.85); }
+  6% {
+    opacity: var(--opacity, 0.8);
+  }
+  35% {
+    transform: translate3d(var(--sway, 12px), 35vh, 0) rotate(calc(var(--spin, 200deg) * 0.35)) scale(var(--scale, 0.7));
+  }
+  65% {
+    transform: translate3d(var(--drift, 35px), 68vh, 0) rotate(calc(var(--spin, 200deg) * 0.68)) scale(var(--scale, 0.7));
+    opacity: var(--opacity, 0.8);
+  }
   100% {
-    transform: translateY(105vh) translateX(var(--drift, 60px)) rotate(var(--spin, 360deg)) scale(var(--scale, 0.85));
+    transform: translate3d(var(--drift, 35px), 110vh, 0) rotate(var(--spin, 200deg)) scale(calc(var(--scale, 0.7) * 0.7));
     opacity: 0;
   }
 }
 
 @keyframes snow-fall {
-  0%   { transform: translateY(-5vh) translateX(0) rotate(0deg); opacity: 1; }
-  80%  { opacity: 1; }
-  100% { transform: translateY(105vh) translateX(var(--drift, 80px)) rotate(var(--spin, 720deg)); opacity: 0; }
+  0% {
+    transform: translate3d(0, var(--start-y, -10vh), 0) rotate(0deg);
+    opacity: 0;
+  }
+  8%  { opacity: 1; }
+  50% {
+    transform: translate3d(var(--sway, 8px), 50vh, 0) rotate(calc(var(--spin, 360deg) * 0.45));
+    opacity: 0.9;
+  }
+  85% {
+    transform: translate3d(var(--drift, 30px), 85vh, 0) rotate(calc(var(--spin, 360deg) * 0.83));
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate3d(var(--drift, 30px), 110vh, 0) rotate(var(--spin, 360deg));
+    opacity: 0;
+  }
 }
 
 @keyframes heart-fall {
-  0%   { transform: translateY(-5vh) translateX(0) scale(0.6); opacity: 1; }
-  60%  { opacity: 1; transform: translateY(60vh) translateX(var(--drift, 50px)) scale(1) rotate(var(--spin, 180deg)); }
-  100% { transform: translateY(105vh) translateX(0) scale(0.8) rotate(calc(var(--spin, 180deg) * 1.5)); opacity: 0; }
+  0% {
+    transform: translate3d(0, var(--start-y, -10vh), 0) scale(0.5) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--opacity, 1);
+  }
+  40% {
+    transform: translate3d(var(--sway, 10px), 38vh, 0) scale(0.85) rotate(calc(var(--spin, 120deg) * 0.38));
+    opacity: var(--opacity, 1);
+  }
+  70% {
+    transform: translate3d(var(--drift, 25px), 68vh, 0) scale(1.0) rotate(calc(var(--spin, 120deg) * 0.72));
+    opacity: calc(var(--opacity, 1) * 0.7);
+  }
+  100% {
+    transform: translate3d(var(--drift, 25px), 110vh, 0) scale(0.6) rotate(var(--spin, 120deg));
+    opacity: 0;
+  }
 }
 
 /* ─── Caption Overlay ──────────────────────────────────── */
