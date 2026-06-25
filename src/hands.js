@@ -175,48 +175,53 @@ export function createIndexFingerTrailController({
     const points = trailPoints;
     if (points.length < 2) return;
 
-    let prevMidX = null;
-    let prevMidY = null;
-
-    for (let index = 0; index < points.length; index += 1) {
-      const current = points[index];
-
-      if (current === null) {
-        prevMidX = null;
-        prevMidY = null;
-        continue;
-      }
-
-      if (index === 0 || points[index - 1] === null) {
-        prevMidX = current.x;
-        prevMidY = current.y;
-        continue;
-      }
-
-      const previous = points[index - 1];
-      const age = timestamp - current.timestamp;
-      const alpha = Math.max(0, 1 - (age / TRAIL_RETENTION_MS));
-      context.strokeStyle = `rgba(255, 230, 92, ${alpha})`;
-      context.lineWidth = 5;
-      context.lineCap = 'round';
-      context.lineJoin = 'round';
-      context.beginPath();
-
-      if (prevMidX === null) {
-        context.moveTo(previous.x, previous.y);
-        context.lineTo(current.x, current.y);
-        prevMidX = (previous.x + current.x) / 2;
-        prevMidY = (previous.y + current.y) / 2;
+    const segments = [];
+    let currentSegment = [];
+    for (const point of points) {
+      if (point === null) {
+        if (currentSegment.length > 0) {
+          segments.push(currentSegment);
+          currentSegment = [];
+        }
       } else {
-        const midX = (previous.x + current.x) / 2;
-        const midY = (previous.y + current.y) / 2;
-        context.moveTo(prevMidX, prevMidY);
-        context.quadraticCurveTo(previous.x, previous.y, midX, midY);
-        prevMidX = midX;
-        prevMidY = midY;
+        currentSegment.push(point);
       }
+    }
+    if (currentSegment.length > 0) {
+      segments.push(currentSegment);
+    }
 
-      context.stroke();
+    for (const segment of segments) {
+      if (segment.length < 2) continue;
+
+      let prevMidX = segment[0].x;
+      let prevMidY = segment[0].y;
+
+      for (let i = 1; i < segment.length; i += 1) {
+        const previous = segment[i - 1];
+        const current = segment[i];
+        const age = timestamp - current.timestamp;
+        const alpha = Math.max(0, 1 - (age / TRAIL_RETENTION_MS));
+        context.strokeStyle = `rgba(255, 230, 92, ${alpha})`;
+        context.lineWidth = 5;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.beginPath();
+
+        if (i === 1) {
+          context.moveTo(previous.x, previous.y);
+          context.lineTo(current.x, current.y);
+        } else {
+          const midX = (previous.x + current.x) / 2;
+          const midY = (previous.y + current.y) / 2;
+          context.moveTo(prevMidX, prevMidY);
+          context.quadraticCurveTo(previous.x, previous.y, midX, midY);
+          prevMidX = midX;
+          prevMidY = midY;
+        }
+
+        context.stroke();
+      }
     }
   }
 
