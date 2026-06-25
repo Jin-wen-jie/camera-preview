@@ -105,7 +105,7 @@ function resolveActiveHand(landmarks) {
 }
 
 export function pruneTrailPoints(points, timestamp, retentionMs = TRAIL_RETENTION_MS) {
-  return points.filter((point) => timestamp - point.timestamp <= retentionMs);
+  return points.filter((point) => point === null || timestamp - point.timestamp <= retentionMs);
 }
 
 export async function createMediaPipeHandLandmarker({
@@ -175,12 +175,25 @@ export function createIndexFingerTrailController({
     const points = trailPoints;
     if (points.length < 2) return;
 
-    let prevMidX = points[0].x;
-    let prevMidY = points[0].y;
+    let prevMidX = null;
+    let prevMidY = null;
 
-    for (let index = 1; index < points.length; index += 1) {
-      const previous = points[index - 1];
+    for (let index = 0; index < points.length; index += 1) {
       const current = points[index];
+
+      if (current === null) {
+        prevMidX = null;
+        prevMidY = null;
+        continue;
+      }
+
+      if (index === 0 || points[index - 1] === null) {
+        prevMidX = current.x;
+        prevMidY = current.y;
+        continue;
+      }
+
+      const previous = points[index - 1];
       const age = timestamp - current.timestamp;
       const alpha = Math.max(0, 1 - (age / TRAIL_RETENTION_MS));
       context.strokeStyle = `rgba(255, 230, 92, ${alpha})`;
@@ -189,9 +202,11 @@ export function createIndexFingerTrailController({
       context.lineJoin = 'round';
       context.beginPath();
 
-      if (index === 1) {
+      if (prevMidX === null) {
         context.moveTo(previous.x, previous.y);
         context.lineTo(current.x, current.y);
+        prevMidX = (previous.x + current.x) / 2;
+        prevMidY = (previous.y + current.y) / 2;
       } else {
         const midX = (previous.x + current.x) / 2;
         const midY = (previous.y + current.y) / 2;
@@ -215,6 +230,9 @@ export function createIndexFingerTrailController({
       strokes.push(currentStroke);
       pointFilter.reset();
       lastSmoothedPoint = null;
+      if (trailPoints.length > 0) {
+        trailPoints.push(null);
+      }
     }
 
     const smoothed = pointFilter.filter(tip.x, tip.y, timestamp);
