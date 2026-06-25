@@ -12,7 +12,7 @@ test('page and app cache-bust resilient render modules together', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const source = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
 
-  assert.match(html, /src="\.\/src\/app\.js\?v=handwriting-v7"/);
+  assert.match(html, /src="\.\/src\/app\.js\?v=silent-clear"/);
   assert.match(source, /hands\.js\?v=handwriting-v7/);
   assert.match(source, /effects\.js\?v=flower-sea/);
   assert.match(source, /voice-commands\.js\?v=semantic-voice/);
@@ -517,9 +517,8 @@ test('app reports unrecognized finger writing commands without triggering effect
 
   assert.equal(effectLayer.dataset.effect, undefined);
   assert.equal(effectLayer.children.length, 0);
-  assert.equal(voiceCommandText.textContent, '手写结果');
-  assert.equal(voiceCommandResult.textContent, '没有识别到可执行指令');
-  assert.equal(voiceCommandResult.dataset.state, 'error');
+  // When no command is recognized, no error should be shown
+  assert.notEqual(voiceCommandResult.dataset.state, 'error');
 });
 
 test('app stops hand trails when the camera stops', async () => {

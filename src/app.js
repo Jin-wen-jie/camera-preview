@@ -135,7 +135,6 @@ async function handleFingerWritingResult(event) {
   const command = parseVoiceCommand(text);
 
   if (!command) {
-    setVoiceCommandStatus(text || '手写结果', '没有识别到可执行指令', 'error');
     return;
   }
 
