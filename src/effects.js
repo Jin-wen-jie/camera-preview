@@ -25,9 +25,7 @@ class Particle {
     // Position
     const xRatio = columnJittered / (columns - 1);
     this.baseX = xRatio * viewportW;
-    this.baseY = cmd.key === 'bubble'
-      ? viewportH * (0.9 + pseudoRand(seed + 9, index) * 0.15)
-      : viewportH * (-0.15 - wave * 0.08 - pseudoRand(seed + 9, index) * 0.06);
+    this.baseY = viewportH * (-0.15 - wave * 0.08 - pseudoRand(seed + 9, index) * 0.06);
 
     this.x = this.baseX;
     this.y = this.baseY;

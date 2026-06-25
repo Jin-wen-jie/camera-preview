@@ -10,10 +10,10 @@ export const EFFECT_COMMANDS = [
     key: 'flower',
     className: 'voice-effect voice-effect--falling-flower',
     glyphs: ['🌸', '🌺', '🌻', '🌷', '🌼', '🌹', '💮', '🪷', '💐', '🌸', '🌺', '🌷', '🌹'],
-    count: 180,
-    columns: 60,
-    fallBase: 3800,
-    fallRange: 2800
+    count: 120,
+    columns: 35,
+    fallBase: 4200,
+    fallRange: 2500
   },
   {
     label: '雪',
@@ -21,10 +21,10 @@ export const EFFECT_COMMANDS = [
     key: 'snow',
     className: 'voice-effect voice-effect--falling-snow',
     glyphs: ['❄️', '❄️', '❅', '❆', '✨', '❄️'],
-    count: 120,
-    columns: 40,
-    fallBase: 4000,
-    fallRange: 3000
+    count: 100,
+    columns: 35,
+    fallBase: 4200,
+    fallRange: 2500
   },
   {
     label: '爱心',
@@ -32,10 +32,10 @@ export const EFFECT_COMMANDS = [
     key: 'heart',
     className: 'voice-effect voice-effect--falling-heart',
     glyphs: ['❤️', '💕', '💗', '💖', '♥'],
-    count: 56,
-    columns: 20,
-    fallBase: 4000,
-    fallRange: 2200
+    count: 80,
+    columns: 35,
+    fallBase: 4200,
+    fallRange: 2500
   },
   {
     label: '星星',
@@ -43,10 +43,10 @@ export const EFFECT_COMMANDS = [
     key: 'star',
     className: 'voice-effect voice-effect--falling-star',
     glyphs: ['✨', '⭐', '🌟', '💫', '⭐', '✨'],
-    count: 80,
-    columns: 30,
-    fallBase: 5000,
-    fallRange: 3000
+    count: 90,
+    columns: 35,
+    fallBase: 4200,
+    fallRange: 2500
   },
   {
     label: '落叶',
@@ -54,10 +54,10 @@ export const EFFECT_COMMANDS = [
     key: 'leaf',
     className: 'voice-effect voice-effect--falling-leaf',
     glyphs: ['🍂', '🍁', '🌿', '🍃', '🍂', '🍁', '🌾'],
-    count: 60,
-    columns: 25,
-    fallBase: 5000,
-    fallRange: 3000
+    count: 80,
+    columns: 35,
+    fallBase: 4200,
+    fallRange: 2500
   },
   {
     label: '泡泡',
@@ -65,10 +65,10 @@ export const EFFECT_COMMANDS = [
     key: 'bubble',
     className: 'voice-effect voice-effect--float-bubble',
     glyphs: ['🫧', '🫧', '💧', '🫧', '🫧'],
-    count: 40,
-    columns: 15,
-    fallBase: 6000,
-    fallRange: 3000
+    count: 70,
+    columns: 35,
+    fallBase: 4200,
+    fallRange: 2500
   }
 ];
 
