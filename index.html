@@ -7,15 +7,15 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>语音花雨</title>
-    <link rel="stylesheet" href="./styles.css?v=voice-only">
+    <link rel="stylesheet" href="./styles.css?v=camera-voice">
 </head>
 <body>
 <main class="app-shell">
     <section class="effect-area">
         <div class="preview-frame">
             <video class="camera-preview" data-camera-preview autoplay playsinline></video>
-            <div class="voice-effect-layer" data-voice-effects aria-hidden="true"></div>
         </div>
+        <div class="voice-effect-layer" data-voice-effects aria-hidden="true"></div>
         <div class="caption-overlay" data-live-caption data-state="idle" aria-live="polite">
             点击「开启字幕」开始识别语音
         </div>
@@ -23,7 +23,7 @@
 
     <aside class="control-panel">
         <h1>语音花雨</h1>
-        <p class="intro">说出「花」，让花雨落下</p>
+        <p class="intro">说出「花」，让花海绽放</p>
 
         <div class="status-row" data-camera-status>
             <span>摄像头</span>
@@ -66,12 +66,8 @@
 
         <p class="hint">浏览器需允许麦克风权限 · 推荐 Chrome</p>
     </aside>
-
-    <div class="caption-overlay" data-live-caption data-state="idle" aria-live="polite">
-        点击「开启字幕」开始识别语音
-    </div>
 </main>
 
-    <script type="module" src="./src/app.js?v=camera-voice"></script>
+<script type="module" src="./src/app.js?v=camera-voice"></script>
 </body>
 </html>

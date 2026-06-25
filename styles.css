@@ -74,7 +74,6 @@ h1 { font-size: 1.5rem; font-weight: 700; }
 .voice-effect-layer {
   position: absolute;
   inset: 0;
-  overflow: hidden;
   pointer-events: none;
   z-index: 10;
 }
