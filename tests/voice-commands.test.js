@@ -1,65 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { parseVoiceCommand } from '../src/voice-commands.js';
 
+// ─── Flower effect ───────────────────────────────────────
+
 test('parseVoiceCommand recognizes flower effect commands', () => {
-  assert.deepEqual(parseVoiceCommand('花'), {
-    type: 'effect',
-    effect: 'flower',
-    label: '花'
-  });
-  assert.deepEqual(parseVoiceCommand('来点花雨让画面浪漫一点'), {
-    type: 'effect',
-    effect: 'flower',
-    label: '花海'
-  });
+  assert.deepEqual(parseVoiceCommand('花'),   { label: '花', type: 'effect', key: 'flower' });
+  assert.deepEqual(parseVoiceCommand('花雨'), { label: '花', type: 'effect', key: 'flower' });
+  assert.deepEqual(parseVoiceCommand('花海'), { label: '花', type: 'effect', key: 'flower' });
+  assert.deepEqual(parseVoiceCommand('浪漫'), { label: '花', type: 'effect', key: 'flower' });
+  assert.deepEqual(parseVoiceCommand('好看'), { label: '花', type: 'effect', key: 'flower' });
 });
+
+// ─── Clear effects ───────────────────────────────────────
 
 test('parseVoiceCommand recognizes clear effect commands', () => {
-  assert.deepEqual(parseVoiceCommand('不要特效了恢复正常'), {
-    type: 'clear-effects',
-    label: '清除特效'
-  });
-  assert.deepEqual(parseVoiceCommand('清空画面'), {
-    type: 'clear-effects',
-    label: '清除特效'
-  });
+  assert.deepEqual(parseVoiceCommand('清除'), { label: '清除', type: 'clear-effects', key: null });
+  assert.deepEqual(parseVoiceCommand('清屏'), { label: '清除', type: 'clear-effects', key: null });
+  assert.deepEqual(parseVoiceCommand('关闭'), { label: '清除', type: 'clear-effects', key: null });
 });
 
-test('parseVoiceCommand recognizes camera size commands', () => {
-  assert.deepEqual(parseVoiceCommand('把摄像头画面放大一点'), {
-    type: 'camera-view',
-    view: 'large',
-    label: '放大画面'
-  });
-  assert.deepEqual(parseVoiceCommand('恢复画面大小'), {
-    type: 'camera-view',
-    view: 'normal',
-    label: '恢复大小'
-  });
-});
-
-test('parseVoiceCommand recognizes caption visibility commands', () => {
-  assert.deepEqual(parseVoiceCommand('隐藏字幕'), {
-    type: 'caption-visibility',
-    visible: false,
-    label: '隐藏字幕'
-  });
-  assert.deepEqual(parseVoiceCommand('显示字幕'), {
-    type: 'caption-visibility',
-    visible: true,
-    label: '显示字幕'
-  });
-});
-
-test('parseVoiceCommand ignores unsupported extra commands', () => {
-  assert.equal(parseVoiceCommand('拍照'), null);
-  assert.equal(parseVoiceCommand('截图'), null);
-  assert.equal(parseVoiceCommand('下雪'), null);
-  assert.equal(parseVoiceCommand('爱心'), null);
-});
+// ─── Unrecognized / edge cases ───────────────────────────
 
 test('parseVoiceCommand ignores unrelated speech', () => {
-  assert.equal(parseVoiceCommand('今天天气不错'), null);
+  assert.equal(parseVoiceCommand('你好'), null);
+  assert.equal(parseVoiceCommand('今天天气真好'), null);
+  assert.equal(parseVoiceCommand(''), null);
+  assert.equal(parseVoiceCommand('  '), null);
+});
+
+test('parseVoiceCommand matches substring in longer text', () => {
+  const result = parseVoiceCommand('我想要花雨');
+  assert.deepEqual(result, { label: '花', type: 'effect', key: 'flower' });
 });

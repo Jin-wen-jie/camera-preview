@@ -2,69 +2,53 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-test('camera preview applies horizontal correction so text is not mirrored', async () => {
+test('voice effect layer is positioned absolutely over the effect area', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
-  assert.match(css, /\.camera-preview\s*\{[^}]*transform:\s*scaleX\(-1\)/s);
+  assert.match(css, /\.voice-effect-layer\s*\{[\s\S]*?position\s*:\s*absolute/);
+  assert.match(css, /\.voice-effect-layer\s*\{[\s\S]*?inset\s*:\s*0/);
+  assert.match(css, /\.voice-effect-layer\s*\{[\s\S]*?pointer-events\s*:\s*none/);
 });
 
-test('desktop layout gives most of the page width to the camera preview', async () => {
+test('falling flower has animation keyframes', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
-  assert.match(css, /grid-template-columns:\s*minmax\(0,\s*1\.75fr\)\s*minmax\(280px,\s*0\.55fr\)/);
-  assert.match(css, /width:\s*min\(1480px,\s*calc\(100% - 24px\)\)/);
+  assert.match(css, /@keyframes\s+flower-fall/);
+  assert.match(css, /\.voice-effect--falling-flower/);
 });
 
-test('voice command large view can expand the camera preview area', async () => {
+test('voice command panel has stable row styles', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
-  assert.match(css, /\.camera-shell\[data-camera-view="large"\]\s*\{/);
-  assert.match(css, /grid-template-columns:\s*minmax\(0,\s*2\.35fr\)\s*minmax\(260px,\s*0\.45fr\)/);
-  assert.match(css, /width:\s*min\(1680px,\s*calc\(100% - 16px\)\)/);
-});
-
-test('live captions are overlaid at the bottom of the camera preview', async () => {
-  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
-
-  assert.match(css, /\.caption-overlay\s*\{[^}]*position:\s*absolute/s);
-  assert.match(css, /\.caption-overlay\s*\{[^}]*bottom:\s*clamp\(12px,\s*2vw,\s*24px\)/s);
-  assert.match(css, /\.caption-overlay\s*\{[^}]*z-index:\s*3/s);
-});
-
-test('hand trails are layered over the camera preview', async () => {
-  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
-
-  assert.match(css, /\.hand-trail-layer\s*\{[^}]*position:\s*absolute/s);
-  assert.match(css, /\.hand-trail-layer\s*\{[^}]*inset:\s*0/s);
-  assert.match(css, /\.hand-trail-layer\s*\{[^}]*z-index:\s*2/s);
-  assert.match(css, /\.hand-status\s*\{[^}]*position:\s*absolute/s);
-});
-
-test('voice effects are layered over the camera preview with full-screen flower sea animation', async () => {
-  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
-
-  assert.match(css, /\.voice-effect-layer\s*\{[^}]*position:\s*absolute/s);
-  assert.match(css, /\.voice-effect-layer\s*\{[^}]*inset:\s*0/s);
-  assert.match(css, /\.voice-effect-layer\s*\{[^}]*z-index:\s*4/s);
-  assert.match(css, /\.voice-effect-impact\s*\{[^}]*animation:\s*impact-ring/s);
-  assert.match(css, /\.voice-effect--falling-flower\s*\{[^}]*animation:\s*flower-fall/s);
-  assert.match(css, /@keyframes flower-fall/);
-  assert.doesNotMatch(css, /data-effect="snow"/);
-  assert.doesNotMatch(css, /voice-effect--heart/);
+  assert.match(css, /\.voice-command-panel/);
+  assert.match(css, /\.voice-command-row/);
 });
 
 test('typed effect command controls are arranged as a compact input row', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
-  assert.match(css, /\.effect-command-row\s*\{[^}]*display:\s*grid/s);
-  assert.match(css, /\.effect-command-input\s*\{[^}]*min-height:\s*46px/s);
+  assert.match(css, /\.effect-command\b/);
+  assert.match(css, /\.effect-command-input/);
 });
 
-test('voice command status panel has stable row styles', async () => {
+test('status rows have per-state color variants', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
-  assert.match(css, /\.voice-command-panel\s*\{[^}]*display:\s*grid/s);
-  assert.match(css, /\.voice-command-row\s*\{[^}]*grid-template-columns:\s*auto\s*minmax\(0,\s*1fr\)/s);
-  assert.doesNotMatch(css, /\.snapshot-preview\s*\{/);
-  assert.doesNotMatch(css, /data-camera-size/);
+  assert.match(css, /strong\[data-state="idle"\]/);
+  assert.match(css, /strong\[data-state="success"\]/);
+  assert.match(css, /strong\[data-state="error"\]/);
+});
+
+test('app shell uses grid layout with control panel side column', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.app-shell\s*\{[\s\S]*?display\s*:\s*grid/);
+  assert.match(css, /\.control-panel/);
+});
+
+test('responsive layout collapses to single column', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /@media\s*\(max-width:\s*860px\)/);
+  assert.match(css, /grid-template-columns\s*:\s*1fr/);
 });

@@ -1,97 +1,66 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>摄像头手势轨迹 v7</title>
-    <link rel="stylesheet" href="./styles.css?v=index-finger-trail">
-  </head>
-  <body>
-    <main class="camera-shell" data-camera-shell aria-labelledby="page-title">
-      <section class="preview-panel">
-        <div class="preview-frame">
-          <video
-            class="camera-preview"
-            data-camera-preview
-            autoplay
-            muted
-            playsinline
-            aria-label="摄像头画面"
-          ></video>
-          <div class="preview-placeholder" aria-hidden="true">
-            <span></span>
-          </div>
-          <canvas class="hand-trail-layer" data-hand-trails aria-hidden="true"></canvas>
-          <div class="voice-effect-layer" data-voice-effects aria-hidden="true"></div>
-          <div class="hand-status" data-hand-status data-state="idle" role="status" aria-live="polite">
-            伸出食指开始记录
-          </div>
-          <div class="caption-overlay" data-live-caption data-state="idle" aria-live="polite">
-            字幕将在这里显示
-          </div>
-        </div>
-      </section>
+    <title>语音花雨</title>
+    <link rel="stylesheet" href="./styles.css?v=voice-only">
+</head>
+<body>
+<main class="app-shell">
+    <section class="effect-area">
+        <div class="voice-effect-layer" data-voice-effects aria-hidden="true"></div>
+    </section>
 
-      <aside class="control-panel">
-        <p class="eyebrow">Local camera</p>
-        <h1 id="page-title">手指轨迹识别</h1>
-        <p class="intro">打开摄像头后，伸出食指开始记录轨迹，收回食指或握拳暂停；五指张开会输出写字数据并清空轨迹。</p>
+    <aside class="control-panel">
+        <h1>语音花雨</h1>
+        <p class="intro">说出「花」，让花雨落下</p>
 
-        <div class="status-row" data-camera-status data-state="idle" role="status" aria-live="polite">
-          摄像头未开启
+        <div class="voice-command-panel">
+            <div class="voice-command-row">
+                <span class="voice-command-label">语音指令</span>
+                <span data-voice-command-text>等待语音…</span>
+            </div>
+            <div class="voice-command-row">
+                <strong data-voice-command-result data-state="idle">点击下方按钮开始识别</strong>
+            </div>
         </div>
 
-        <div class="actions" aria-label="摄像头控制">
-          <button class="primary-button" type="button" data-camera-start>开启摄像头</button>
-          <button class="secondary-button" type="button" data-camera-stop>停止</button>
+        <div class="status-row" data-caption-status>
+            <span>字幕</span>
+            <strong data-state="idle">未启动</strong>
         </div>
-
-        <div class="status-row caption-status" data-caption-status data-state="idle" role="status" aria-live="polite">
-          实时字幕未开启
-        </div>
-
-        <div class="actions" aria-label="实时字幕控制">
-          <button class="secondary-button" type="button" data-caption-start>开启字幕</button>
-          <button class="secondary-button" type="button" data-caption-stop>停止字幕</button>
-        </div>
+        <button class="primary-button" data-caption-start>开启字幕</button>
+        <button class="secondary-button" data-caption-stop disabled>关闭字幕</button>
 
         <form class="effect-command" data-effect-form>
-          <label class="effect-command-label" for="effect-command-input">文字指令</label>
-          <div class="effect-command-row">
-            <input
-              id="effect-command-input"
-              class="effect-command-input"
-              data-effect-input
-              type="text"
-              autocomplete="off"
-              placeholder="花"
-            >
-            <button class="primary-button" type="submit">执行</button>
-          </div>
+            <span class="effect-command-label">手动输入</span>
+            <div class="effect-command-row">
+                <input
+                    class="effect-command-input"
+                    type="text"
+                    data-effect-input
+                    placeholder="输入「花」"
+                    aria-label="输入指令触发特效"
+                >
+                <button class="primary-button" type="submit" data-effect-submit>执行</button>
+            </div>
+            <div class="status-row" data-effect-status>
+                <strong data-state="idle">输入指令触发特效</strong>
+            </div>
         </form>
 
-        <div class="status-row effect-status" data-effect-status data-state="idle" role="status" aria-live="polite">
-          等待花指令
-        </div>
+        <p class="hint">浏览器需允许麦克风权限 · 推荐 Chrome</p>
+    </aside>
 
-        <div class="voice-command-panel" aria-label="voice command status">
-          <div class="voice-command-row">
-            <span>识别指令</span>
-            <strong data-voice-command-text>等待语音指令</strong>
-          </div>
-          <div class="voice-command-row">
-            <span>执行结果</span>
-            <strong data-voice-command-result>开启字幕后可语音触发花</strong>
-          </div>
-        </div>
+    <div class="caption-overlay" data-live-caption data-state="idle" aria-live="polite">
+        点击「开启字幕」开始识别语音
+    </div>
+</main>
 
-        <p class="hint">如果看不到权限弹窗，请确认正在通过 localhost 或 HTTPS 打开页面。</p>
-      </aside>
-    </main>
-
-    <script type="module" src="./src/app.js?v=silent-clear"></script>
-  </body>
+<script type="module" src="./src/app.js?v=voice-only"></script>
+</body>
 </html>

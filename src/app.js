@@ -1,235 +1,130 @@
-import { startCamera, stopCamera } from './camera.js';
-import { createCaptionController } from './captions.js?v=replace-latest-2';
-import { createVoiceEffectController } from './effects.js?v=flower-sea';
-import { dispatchFingerWritingResult } from './finger-writing-events.js?v=finger-writing-result';
-import { createIndexFingerTrailController } from './hands.js?v=handwriting-v7';
-import { parseVoiceCommand } from './voice-commands.js?v=semantic-voice';
+import { createCaptionController } from './captions.js?v=voice-only';
+import { createVoiceEffectController } from './effects.js?v=voice-only';
+import { parseVoiceCommand } from './voice-commands.js?v=voice-only';
 
-const cameraShell = document.querySelector('[data-camera-shell]');
-const video = document.querySelector('[data-camera-preview]');
-const status = document.querySelector('[data-camera-status]');
-const startButton = document.querySelector('[data-camera-start]');
-const stopButton = document.querySelector('[data-camera-stop]');
-const captionOutput = document.querySelector('[data-live-caption]');
-const captionStatus = document.querySelector('[data-caption-status]');
+// ─── DOM elements ────────────────────────────────────────
+
+const captionOverlay = document.querySelector('[data-live-caption]');
+
 const captionStartButton = document.querySelector('[data-caption-start]');
 const captionStopButton = document.querySelector('[data-caption-stop]');
+const captionStatus = document.querySelector('[data-caption-status] strong');
+
 const effectForm = document.querySelector('[data-effect-form]');
 const effectInput = document.querySelector('[data-effect-input]');
-const effectStatus = document.querySelector('[data-effect-status]');
-const effectLayer = document.querySelector('[data-voice-effects]');
+const effectStatusRow = document.querySelector('[data-effect-status]');
+const effectStatus = effectStatusRow?.querySelector('strong');
+
 const voiceCommandText = document.querySelector('[data-voice-command-text]');
 const voiceCommandResult = document.querySelector('[data-voice-command-result]');
-const handTrailCanvas = document.querySelector('[data-hand-trails]');
-const handStatus = document.querySelector('[data-hand-status]');
-const createElement = document.createElement.bind(document);
 
-let currentStream = null;
-let captionController = null;
-let handTrailController = null;
-const effectLabels = {
-  flower: '花'
-};
-const voiceEffects = createVoiceEffectController({
-  layer: effectLayer,
-  createElement
-});
+const effectLayer = document.querySelector('[data-voice-effects]');
 
-function setControls(isRunning) {
-  startButton.disabled = isRunning;
-  stopButton.disabled = !isRunning;
-}
+// ─── Status helpers ──────────────────────────────────────
 
 function setCaptionControls(isRunning) {
-  const isSupported = captionController?.isSupported !== false;
-  captionStartButton.disabled = !isSupported || isRunning;
-  captionStopButton.disabled = !isSupported || !isRunning;
+  captionStartButton.disabled = isRunning;
+  captionStopButton.disabled = !isRunning;
 }
 
-function setEffectStatus(text, state) {
+const EFFECT_LABELS = {
+  flower: '花雨',
+  clear: '清除'
+};
+
+function getEffectReadyText() {
+  return '输入指令触发特效';
+}
+
+function setEffectStatus(text, state = 'idle') {
+  if (!effectStatus) return;
   effectStatus.textContent = text;
   effectStatus.dataset.state = state;
 }
 
-function setVoiceCommandStatus(label, result, state = 'ready') {
-  if (voiceCommandText) {
-    voiceCommandText.textContent = label;
-  }
-
+function setVoiceCommandStatus(label, text, state) {
+  if (voiceCommandText) voiceCommandText.textContent = label || '语音指令';
   if (voiceCommandResult) {
-    voiceCommandResult.textContent = result;
+    voiceCommandResult.textContent = text;
     voiceCommandResult.dataset.state = state;
   }
 }
 
-function getEffectReadyText(effect) {
-  return `已执行：${effectLabels[effect]}`;
+// ─── Voice effects ───────────────────────────────────────
+
+const voiceEffects = createVoiceEffectController({ layer: effectLayer });
+
+function triggerVisualEffect(prompt) {
+  voiceEffects.triggerFromTranscript(prompt);
 }
 
-function setCameraView(view) {
-  cameraShell.dataset.cameraView = view;
-}
+// ─── Command execution ───────────────────────────────────
 
-function setCaptionVisibility(isVisible) {
-  captionOutput.hidden = !isVisible;
-}
-
-async function triggerVisualEffect(prompt) {
-  const effectType = voiceEffects.getEffectType(prompt);
-  if (!effectType) return false;
-
-  return voiceEffects.triggerFromTranscript(prompt);
-}
-
-async function executeVoiceCommand(command, transcript) {
+async function executeVoiceCommand(command, _transcript) {
   if (command.type === 'effect') {
-    const effect = await triggerVisualEffect(transcript);
-    if (!effect) {
-      return { text: '没有识别到可执行指令', state: 'error' };
-    }
-
-    setEffectStatus(getEffectReadyText(effect), 'ready');
-    return { text: `已执行：${command.label}`, state: 'ready' };
+    triggerVisualEffect(command.key);
+    const label = EFFECT_LABELS[command.key] || command.label;
+    return { text: `已执行：${label}`, state: 'success' };
   }
 
   if (command.type === 'clear-effects') {
     voiceEffects.clear();
-    setEffectStatus('特效已清除', 'ready');
-    return { text: '已清除特效', state: 'ready' };
+    return { text: '特效已清除', state: 'success' };
   }
 
-  if (command.type === 'camera-view') {
-    setCameraView(command.view);
-    return {
-      text: command.view === 'large' ? '画面已放大' : '画面已恢复',
-      state: 'ready'
-    };
-  }
-
-  if (command.type === 'caption-visibility') {
-    setCaptionVisibility(command.visible);
-    return {
-      text: command.visible ? '字幕已显示' : '字幕已隐藏',
-      state: 'ready'
-    };
-  }
-
-  return { text: '没有识别到可执行指令', state: 'error' };
+  return { text: '未知指令', state: 'error' };
 }
 
 async function handleVoiceTranscript(transcript) {
+  if (!transcript) return;
   const command = parseVoiceCommand(transcript);
-  if (!command) {
-    await triggerVisualEffect(transcript);
-    return;
-  }
+  if (!command) return;
 
-  setVoiceCommandStatus(command.label, '执行中...', 'loading');
+  setVoiceCommandStatus(command.label, '执行中…', 'loading');
   const result = await executeVoiceCommand(command, transcript);
   setVoiceCommandStatus(command.label, result.text, result.state);
 }
 
-async function handleFingerWritingResult(event) {
-  const writingResult = event?.detail || {};
-  const text = String(writingResult.text || '').trim();
-  const command = parseVoiceCommand(text);
+// ─── Live captions ───────────────────────────────────────
 
-  if (!command) {
-    return;
-  }
-
-  setVoiceCommandStatus(command.label, '执行中...', 'loading');
-  const result = await executeVoiceCommand(command, text);
-  setVoiceCommandStatus(command.label, result.text, result.state);
-}
-
-function ensureHandTrailController() {
-  if (!handTrailController) {
-    handTrailController = createIndexFingerTrailController({
-      video,
-      canvas: handTrailCanvas,
-      status: handStatus,
-      onWritingResult: dispatchFingerWritingResult
-    });
-  }
-
-  return handTrailController;
-}
-
-async function handleStart() {
-  startButton.disabled = true;
-
-  try {
-    currentStream = await startCamera({
-      mediaDevices: navigator.mediaDevices,
-      video,
-      status
-    });
-    ensureHandTrailController().start();
-    setControls(true);
-  } catch {
-    currentStream = null;
-    setControls(false);
-  }
-}
-
-function handleStop() {
-  stopCamera({ stream: currentStream, video, status });
-  currentStream = null;
-  handTrailController?.stop();
-  setControls(false);
-}
-
-async function handleEffectSubmit(event) {
-  event.preventDefault();
-
-  const prompt = effectInput.value.trim();
-  if (!prompt) {
-    setEffectStatus('请输入花指令', 'error');
-    return;
-  }
-
-  const command = parseVoiceCommand(prompt);
-  if (!command) {
-    setEffectStatus('没有识别到可执行指令', 'error');
-    return;
-  }
-
-  const result = await executeVoiceCommand(command, prompt);
-  setVoiceCommandStatus(command.label, result.text, result.state);
-}
-
-startButton.addEventListener('click', handleStart);
-stopButton.addEventListener('click', handleStop);
-effectForm.addEventListener('submit', handleEffectSubmit);
-window.addEventListener('finger-writing-result', (event) => {
-  void handleFingerWritingResult(event);
-});
-captionController = createCaptionController({
-  SpeechRecognition: window.SpeechRecognition || window.webkitSpeechRecognition,
-  output: captionOutput,
-  status: captionStatus,
+const captions = createCaptionController({
+  output: captionOverlay,
   onTranscript: (_visibleTranscript, recentTranscript) => {
     void handleVoiceTranscript(recentTranscript);
   },
-  onStateChange: setCaptionControls
-});
-captionStartButton.addEventListener('click', () => {
-  voiceEffects.clear();
-  captionController.start();
-});
-captionStopButton.addEventListener('click', () => {
-  captionController.stop();
-});
-window.addEventListener('beforeunload', () => {
-  if (currentStream) {
-    stopCamera({ stream: currentStream, video, status: null });
+  onStatusChange({ isListening }) {
+    setCaptionControls(isListening);
+    if (captionStatus) {
+      captionStatus.textContent = isListening ? '识别中' : '已停止';
+      captionStatus.dataset.state = isListening ? 'active' : 'idle';
+    }
+    setEffectStatus(getEffectReadyText(), 'idle');
   }
-  handTrailController?.stop();
-  voiceEffects.clear();
-  captionController.stop();
 });
 
-setControls(false);
-setCaptionControls(false);
-handleStart();
+captionStartButton.addEventListener('click', () => captions.start());
+captionStopButton.addEventListener('click', () => captions.stop());
+
+// ─── Typed command form ──────────────────────────────────
+
+effectForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const text = effectInput.value.trim();
+  if (!text) return;
+
+  const command = parseVoiceCommand(text);
+  if (!command) {
+    setEffectStatus('未识别的指令', 'error');
+    return;
+  }
+
+  setEffectStatus('执行中…', 'loading');
+  const result = await executeVoiceCommand(command, text);
+  setEffectStatus(result.text, result.state);
+  effectInput.value = '';
+});
+
+// ─── Initial state ───────────────────────────────────────
+
+setEffectStatus(getEffectReadyText(), 'idle');
+setVoiceCommandStatus('语音指令', '点击下方按钮开始识别', 'idle');
