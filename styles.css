@@ -5,16 +5,15 @@
   --surface: #ffffff;
   --surface-glass: rgba(255, 255, 255, 0.85);
   --text: #1a1a1a;
-  --text-secondary: #888;
-  --border: rgba(17, 19, 24, 0.10);
+  --text-secondary: #666;
+  --border: rgba(17, 19, 24, 0.12);
   --brand: #4f46e5;
   --brand-hover: #4338ca;
   --brand-subtle: rgba(79, 70, 229, 0.08);
   --success: #16a34a;
   --error: #dc2626;
   --effect-bg: #151a1f;
-  --radius: 8px;
-  --radius-sm: 5px;
+  --radius: 12px;
   --shadow: 0 0 0 1px var(--border);
   --shadow-panel: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px var(--border);
   --font-stack: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -26,8 +25,9 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-stack);
-  line-height: 1.5;
+  line-height: 1.6;
   min-height: 100vh;
+  zoom: 0.6;
 }
 
 button, input { font: inherit; }
@@ -36,7 +36,7 @@ button, input { font: inherit; }
 
 .app-shell {
   display: grid;
-  grid-template-columns: 1fr 216px;
+  grid-template-columns: 1fr 360px;
   min-height: 100vh;
 }
 
@@ -44,17 +44,15 @@ button, input { font: inherit; }
   position: relative;
   background: var(--effect-bg);
   min-height: 100vh;
-  overflow: hidden;
 }
 
 .preview-frame {
   position: relative;
   overflow: hidden;
   aspect-ratio: 16 / 10;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--effect-bg);
   box-shadow: var(--shadow);
-  margin: 14px;
 }
 
 .camera-preview {
@@ -74,25 +72,25 @@ button, input { font: inherit; }
 .mirror-toggle {
   position: absolute;
   z-index: 15;
-  bottom: 8px;
-  right: 8px;
-  width: 30px;
-  height: 30px;
+  bottom: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.40);
+  background: rgba(0,0,0,0.45);
   border: none;
-  color: rgba(255,255,255,0.80);
+  color: rgba(255,255,255,0.85);
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
-.mirror-toggle:hover { background: rgba(0,0,0,0.55); color: #fff; }
-.mirror-toggle:active { transform: scale(0.85); }
+.mirror-toggle:hover { background: rgba(0,0,0,0.6); color: #fff; }
+.mirror-toggle:active { transform: scale(0.9); }
 .mirror-toggle:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
@@ -105,28 +103,16 @@ button, input { font: inherit; }
   background: rgba(79,70,229,0.7);
 }
 
-/* ─── Control Panel ────────────────────────────────────── */
-
 .control-panel {
-  padding: 29px 19px 24px;
+  padding: 48px 32px 32px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 24px;
   border-left: 1px solid var(--border);
-  background: var(--surface);
 }
 
-h1 {
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.intro {
-  color: var(--text-secondary);
-  font-size: 0.57rem;
-  margin-top: -4px;
-}
+h1 { font-size: 1.5rem; font-weight: 700; }
+.intro { color: var(--text-secondary); font-size: 0.95rem; }
 
 /* ─── Voice Effect Layer ───────────────────────────────── */
 
@@ -157,7 +143,7 @@ h1 {
   top: 50%;
   width: 0;
   height: 0;
-  border: 3px solid rgba(79, 70, 229, 0.5);
+  border: 4px solid rgba(79, 70, 229, 0.6);
   border-radius: 50%;
   transform-origin: center center;
   pointer-events: none;
@@ -260,8 +246,8 @@ h1 {
   left: 0;
   right: 0;
   z-index: 20;
-  padding: 18px 20px;
-  font-size: 0.85rem;
+  padding: 24px;
+  font-size: 1.25rem;
   color: #fff;
   text-shadow: 0 0 12px rgba(0,0,0,0.6);
   text-align: center;
@@ -297,16 +283,16 @@ h1 {
   background: var(--brand-subtle);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: 16px;
 }
 .voice-command-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
-.voice-command-row + .voice-command-row { margin-top: 6px; }
-.voice-command-label { color: var(--text-secondary); font-size: 0.50rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.voice-command-row + .voice-command-row { margin-top: 8px; }
+.voice-command-label { color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 
 /* ─── Status rows ──────────────────────────────────────── */
 
@@ -314,15 +300,15 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.52rem;
+  font-size: 0.85rem;
   color: var(--text-secondary);
 }
 strong[data-state="idle"]    { color: var(--text-secondary); }
-strong[data-state="active"]  { color: var(--brand); font-weight: 700; }
-strong[data-state="success"] { color: var(--success); font-weight: 700; }
-strong[data-state="error"]   { color: var(--error); font-weight: 700; }
+strong[data-state="active"]  { color: var(--brand); }
+strong[data-state="success"] { color: var(--success); }
+strong[data-state="error"]   { color: var(--error); }
 strong[data-state="loading"] { color: var(--brand); }
-strong[data-state="ready"]   { color: var(--success); font-weight: 700; }
+strong[data-state="ready"]   { color: var(--success); }
 
 /* ─── Effect command form ──────────────────────────────── */
 
@@ -330,19 +316,19 @@ strong[data-state="ready"]   { color: var(--success); font-weight: 700; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
-.effect-command-label { color: var(--text-secondary); font-size: 0.50rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-.effect-command-row { display: flex; gap: 6px; }
+.effect-command-label { color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.effect-command-row { display: flex; gap: 8px; }
 .effect-command-input {
   flex: 1;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 5px 8px;
-  font-size: 0.6rem;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 1rem;
   background: var(--bg);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -355,18 +341,17 @@ strong[data-state="ready"]   { color: var(--success); font-weight: 700; }
 /* ─── Buttons ──────────────────────────────────────────── */
 
 button {
-  border-radius: var(--radius-sm);
-  padding: 5px 12px;
-  font-size: 0.55rem;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
-  line-height: 1.4;
 }
-button:disabled { opacity: 0.4; cursor: default; }
+button:disabled { opacity: 0.5; cursor: default; }
 button:focus-visible,
 input:focus-visible {
   outline: 2px solid var(--brand);
@@ -385,9 +370,9 @@ input:focus-visible {
 }
 
 .secondary-button { background: var(--surface); }
-.secondary-button:hover:not(:disabled) { background: #f3f4f6; }
+.secondary-button:hover:not(:disabled) { background: #f0f0f0; }
 .secondary-button:active:not(:disabled) {
-  background: #e5e7eb;
+  background: #e5e5e5;
   transform: scale(0.97);
 }
 
@@ -395,26 +380,23 @@ input:focus-visible {
 
 .hint {
   color: var(--text-secondary);
-  font-size: 0.47rem;
+  font-size: 0.78rem;
   margin-top: auto;
-  padding-top: 12px;
+  padding-top: 16px;
   border-top: 1px solid var(--border);
-  line-height: 1.6;
 }
 .hint kbd {
   display: inline-block;
-  padding: 0px 4px;
-  font-size: 0.44rem;
+  padding: 1px 5px;
+  font-size: 0.72rem;
   font-family: inherit;
   font-weight: 600;
   color: var(--text);
-  background: var(--bg);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 4px;
   box-shadow: 0 1px 0 var(--border);
-  line-height: 1.5;
-  min-width: 16px;
-  text-align: center;
+  line-height: 1.4;
 }
 
 /* ─── Responsive ───────────────────────────────────────── */
@@ -434,13 +416,5 @@ input:focus-visible {
     grid-template-columns: 1fr;
     grid-template-rows: 50vh auto;
   }
-  .control-panel {
-    border-left: none;
-    border-top: 1px solid var(--border);
-    padding: 20px 16px;
-  }
-  .preview-frame {
-    margin: 8px;
-    aspect-ratio: 16 / 12;
-  }
+  .control-panel { border-left: none; border-top: 1px solid var(--border); }
 }
