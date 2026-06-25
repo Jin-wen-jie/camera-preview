@@ -6,11 +6,11 @@ test('page and app cache-bust camera-voice modules together', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const source = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
 
-  assert.match(html, /src="\.\/src\/app\.js\?v=3"/);
-  assert.match(source, /captions\.js\?v=3/);
-  assert.match(source, /effects\.js\?v=3/);
-  assert.match(source, /voice-commands\.js\?v=3/);
-  assert.match(source, /camera\.js\?v=3/);
+  assert.match(html, /src="\.\/src\/app\.js\?v=4"/);
+  assert.match(source, /captions\.js\?v=4/);
+  assert.match(source, /effects\.js\?v=4/);
+  assert.match(source, /voice-commands\.js\?v=4/);
+  assert.match(source, /camera\.js\?v=4/);
 });
 
 test('app module loads without throwing', async () => {
