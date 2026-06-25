@@ -1,5 +1,6 @@
 import { setStatus } from './utils.js';
 import { createPointFilter } from './point-filter.js';
+import { recognizeStrokes } from './stroke-recognizer.js';
 
 const MEDIAPIPE_VERSION = '0.10.35';
 const MEDIAPIPE_MODULE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/vision_bundle.mjs`;
@@ -260,9 +261,11 @@ export function createIndexFingerTrailController({
       return null;
     }
 
+    const recognizedText = recognizeStrokes(completedStrokes);
+
     return {
       source: 'finger-writing',
-      text: '',
+      text: recognizedText,
       strokes: completedStrokes,
       createdAt: timestamp
     };
