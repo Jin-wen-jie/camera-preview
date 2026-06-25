@@ -69,6 +69,7 @@ function createCanvas() {
         beginPath() {},
         moveTo() {},
         lineTo() {},
+        quadraticCurveTo() {},
         stroke() {},
         set strokeStyle(value) {},
         set lineWidth(value) {},
@@ -213,7 +214,7 @@ test('controller emits a finger writing result when open palm finishes writing',
   assert.equal(results[0].strokes.length, 2);
   assert.deepEqual(results[0].strokes[0], [
     { x: 256, y: 144, timestamp: 1000 },
-    { x: 288, y: 163.20000000000002, timestamp: 1100 }
+    { x: 268.3580615165729, y: 151.41360909300522, timestamp: 1100 }
   ]);
   assert.deepEqual(results[0].strokes[1], [
     { x: 332.8, y: 182.4, timestamp: 1200 }

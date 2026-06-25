@@ -1,4 +1,5 @@
 import { setStatus } from './utils.js';
+import { createPointFilter } from './point-filter.js';
 
 const MEDIAPIPE_VERSION = '0.10.35';
 const MEDIAPIPE_MODULE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/vision_bundle.mjs`;
@@ -7,6 +8,7 @@ const HAND_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_lan
 const THUMB_TIP = 4;
 const INDEX_TIP = 8;
 const TRAIL_RETENTION_MS = 5000;
+const MIN_POINT_DISTANCE = 0.002;
 
 function hasPoint(landmarks, index) {
   return Number.isFinite(landmarks?.[index]?.x) && Number.isFinite(landmarks?.[index]?.y);
@@ -146,6 +148,8 @@ export function createIndexFingerTrailController({
   let currentStroke = null;
   let lastVideoTime = -1;
   const context = canvas?.getContext?.('2d') || null;
+  const pointFilter = createPointFilter();
+  let lastSmoothedPoint = null;
 
   function updateStatus(text, state) {
     setStatus(status, text, state);
@@ -168,11 +172,15 @@ export function createIndexFingerTrailController({
     context.clearRect(0, 0, canvas.width, canvas.height);
     trailPoints = pruneTrailPoints(trailPoints, timestamp);
 
-    if (trailPoints.length < 2) return;
+    const points = trailPoints;
+    if (points.length < 2) return;
 
-    for (let index = 1; index < trailPoints.length; index += 1) {
-      const previous = trailPoints[index - 1];
-      const current = trailPoints[index];
+    let prevMidX = points[0].x;
+    let prevMidY = points[0].y;
+
+    for (let index = 1; index < points.length; index += 1) {
+      const previous = points[index - 1];
+      const current = points[index];
       const age = timestamp - current.timestamp;
       const alpha = Math.max(0, 1 - (age / TRAIL_RETENTION_MS));
       context.strokeStyle = `rgba(255, 230, 92, ${alpha})`;
@@ -180,8 +188,19 @@ export function createIndexFingerTrailController({
       context.lineCap = 'round';
       context.lineJoin = 'round';
       context.beginPath();
-      context.moveTo(previous.x, previous.y);
-      context.lineTo(current.x, current.y);
+
+      if (index === 1) {
+        context.moveTo(previous.x, previous.y);
+        context.lineTo(current.x, current.y);
+      } else {
+        const midX = (previous.x + current.x) / 2;
+        const midY = (previous.y + current.y) / 2;
+        context.moveTo(prevMidX, prevMidY);
+        context.quadraticCurveTo(previous.x, previous.y, midX, midY);
+        prevMidX = midX;
+        prevMidY = midY;
+      }
+
       context.stroke();
     }
   }
@@ -190,16 +209,30 @@ export function createIndexFingerTrailController({
     const tip = getIndexFingerTip(landmarks);
     if (!tip || !canvas) return;
     sizeCanvas();
-    const point = {
-      x: tip.x * canvas.width,
-      y: tip.y * canvas.height,
-      timestamp
-    };
-    trailPoints.push(point);
+
     if (!currentStroke) {
       currentStroke = [];
       strokes.push(currentStroke);
+      pointFilter.reset();
+      lastSmoothedPoint = null;
     }
+
+    const smoothed = pointFilter.filter(tip.x, tip.y, timestamp);
+
+    if (lastSmoothedPoint) {
+      const dx = smoothed.x - lastSmoothedPoint.x;
+      const dy = smoothed.y - lastSmoothedPoint.y;
+      if (Math.hypot(dx, dy) < MIN_POINT_DISTANCE) return;
+    }
+
+    lastSmoothedPoint = { x: smoothed.x, y: smoothed.y };
+
+    const point = {
+      x: smoothed.x * canvas.width,
+      y: smoothed.y * canvas.height,
+      timestamp
+    };
+    trailPoints.push(point);
     currentStroke.push(point);
   }
 
@@ -229,6 +262,8 @@ export function createIndexFingerTrailController({
     trailPoints = [];
     strokes = [];
     currentStroke = null;
+    lastSmoothedPoint = null;
+    pointFilter.reset();
     updateStatus('五指张开已输出并清屏', 'cleared');
     draw(timestamp);
   }
@@ -321,6 +356,8 @@ export function createIndexFingerTrailController({
       trailPoints = [];
       strokes = [];
       currentStroke = null;
+      lastSmoothedPoint = null;
+      pointFilter.reset();
       draw();
       updateStatus('手势识别已停止', 'idle');
     },

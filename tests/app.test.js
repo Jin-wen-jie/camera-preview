@@ -94,6 +94,7 @@ function createCanvas() {
           beginPath() {},
           moveTo() {},
           lineTo() {},
+          quadraticCurveTo() {},
           stroke() {},
           set strokeStyle(value) {},
           set lineWidth(value) {},
