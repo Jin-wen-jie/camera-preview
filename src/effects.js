@@ -1,24 +1,48 @@
 import { normalize } from './utils.js';
 
-const FLOWER_TRIGGER = {
-  phrases: ['花'],
-  type: 'flower',
-  className: 'voice-effect voice-effect--falling-flower'
-};
-const FLOWER_GLYPHS = ['🌸', '🌺', '✿', '❀', '❁'];
-const FLOWER_SEA_COUNT = 108;
-const FLOWER_SEA_COLUMNS = 36;
+const EFFECT_DEFS = [
+  {
+    phrases: ['花'],
+    type: 'flower',
+    className: 'voice-effect voice-effect--falling-flower',
+    glyphs: ['🌸', '🌺', '✿', '❀', '❁'],
+    count: 108,
+    columns: 36,
+    fallBase: 4400,
+    fallRange: 2100
+  },
+  {
+    phrases: ['雪', '雪花'],
+    type: 'snow',
+    className: 'voice-effect voice-effect--falling-snow',
+    glyphs: ['❄️', '❅', '❆', '•', '·'],
+    count: 80,
+    columns: 40,
+    fallBase: 3800,
+    fallRange: 2800
+  },
+  {
+    phrases: ['心', '爱心', '喜欢'],
+    type: 'heart',
+    className: 'voice-effect voice-effect--falling-heart',
+    glyphs: ['❤️', '💕', '💗', '💖', '♥'],
+    count: 72,
+    columns: 24,
+    fallBase: 4000,
+    fallRange: 2200
+  }
+];
 
 function setStyleIndex(element, index) {
   element.style?.setProperty?.('--i', String(index));
 }
 
-function setFlowerFallMotion(element, index) {
-  const column = index % FLOWER_SEA_COLUMNS;
-  const wave = Math.floor(index / FLOWER_SEA_COLUMNS);
-  const x = (column / (FLOWER_SEA_COLUMNS - 1)) * 100;
+function setFallMotion(def, element, index) {
+  const column = index % def.columns;
+  const wave = Math.floor(index / def.columns);
+  const x = (column / (def.columns - 1)) * 100;
   const drift = ((index % 9) - 4) * 4.25;
-  const duration = 4400 + ((index * 137) % 2100);
+  const duration = def.fallBase + ((index * 137) % def.fallRange);
   const delay = (wave * 360) + ((column % 12) * 52);
   const scale = 0.68 + ((index % 8) * 0.09);
   const spin = (index % 2 === 0 ? 1 : -1) * (280 + ((index % 7) * 58));
@@ -39,6 +63,7 @@ export function createVoiceEffectController({
   durationMs = 7200
 }) {
   let clearTimer = null;
+  let currentDef = null;
 
   function clear() {
     if (clearTimer) {
@@ -63,34 +88,38 @@ export function createVoiceEffectController({
     layer.append(element);
   }
 
-  function appendFlowerSea() {
-    for (let index = 0; index < FLOWER_SEA_COUNT; index += 1) {
+  function appendEffect(def) {
+    for (let index = 0; index < def.count; index += 1) {
       const element = createElement('span');
-      element.className = FLOWER_TRIGGER.className;
-      element.textContent = FLOWER_GLYPHS[index % FLOWER_GLYPHS.length];
+      element.className = def.className;
+      element.textContent = def.glyphs[index % def.glyphs.length];
       setStyleIndex(element, index);
-      setFlowerFallMotion(element, index);
+      setFallMotion(def, element, index);
       layer.append(element);
     }
   }
 
   function findTrigger(text) {
     const normalizedText = normalize(text);
-    return FLOWER_TRIGGER.phrases.some((phrase) => normalizedText.includes(phrase))
-      ? FLOWER_TRIGGER
-      : null;
+    for (const def of EFFECT_DEFS) {
+      if (def.phrases.some((phrase) => normalizedText.includes(phrase))) {
+        return def;
+      }
+    }
+    return null;
   }
 
-  function show() {
+  function show(def) {
     clear();
+    currentDef = def;
     if (layer?.dataset) {
-      layer.dataset.effect = FLOWER_TRIGGER.type;
+      layer.dataset.effect = def.type;
     }
 
     appendImpact();
-    appendFlowerSea();
+    appendEffect(def);
     scheduleClear();
-    return FLOWER_TRIGGER.type;
+    return def.type;
   }
 
   return {
@@ -99,7 +128,8 @@ export function createVoiceEffectController({
       return findTrigger(text)?.type || false;
     },
     triggerFromTranscript(text) {
-      return findTrigger(text) ? show() : false;
+      const def = findTrigger(text);
+      return def ? show(def) : false;
     }
   };
 }

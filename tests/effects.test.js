@@ -115,21 +115,26 @@ test('voice effect controller keeps flower sea independent of supplied face orig
   assert.equal(layer.style.values['--effect-y'], undefined);
 });
 
-test('voice effect controller ignores removed snow and heart commands', () => {
-  const layer = createLayer();
-  const effects = createVoiceEffectController({
-    layer,
+test('voice effect controller triggers snow and heart from their phrases', () => {
+  const layerSnow = createLayer();
+  const effectsSnow = createVoiceEffectController({
+    layer: layerSnow,
     createElement,
-    timers: {
-      setTimeout() {
-        return 1;
-      },
-      clearTimeout() {}
-    }
+    timers: { setTimeout() { return 1; }, clearTimeout() {} }
   });
 
-  assert.equal(effects.triggerFromTranscript('下雪'), false);
-  assert.equal(effects.triggerFromTranscript('爱心'), false);
-  assert.equal(layer.dataset.effect, undefined);
-  assert.equal(layer.children.length, 0);
+  assert.equal(effectsSnow.triggerFromTranscript('下雪'), 'snow');
+  assert.equal(layerSnow.dataset.effect, 'snow');
+  assert.ok(layerSnow.children.some((c) => c.className.includes('falling-snow')));
+
+  const layerHeart = createLayer();
+  const effectsHeart = createVoiceEffectController({
+    layer: layerHeart,
+    createElement,
+    timers: { setTimeout() { return 1; }, clearTimeout() {} }
+  });
+
+  assert.equal(effectsHeart.triggerFromTranscript('爱心'), 'heart');
+  assert.equal(layerHeart.dataset.effect, 'heart');
+  assert.ok(layerHeart.children.some((c) => c.className.includes('falling-heart')));
 });

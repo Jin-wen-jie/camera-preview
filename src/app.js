@@ -29,6 +29,8 @@ function setCaptionControls(isRunning) {
 
 const EFFECT_LABELS = {
   flower: '花雨',
+  snow: '飘雪',
+  heart: '爱心',
   clear: '清除'
 };
 

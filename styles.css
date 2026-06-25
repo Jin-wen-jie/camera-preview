@@ -89,6 +89,22 @@ h1 { font-size: 1.5rem; font-weight: 700; }
   animation: flower-fall var(--fall-duration) ease-in forwards;
 }
 
+.voice-effect--falling-snow {
+  --fall-duration: 5.2s;
+  --sway-distance: 80px;
+  --rotation: 720deg;
+  --start-x: 0px;
+  animation: snow-fall var(--fall-duration) ease-in forwards;
+}
+
+.voice-effect--falling-heart {
+  --fall-duration: 4.5s;
+  --sway-distance: 50px;
+  --rotation: 180deg;
+  --start-x: 0px;
+  animation: heart-fall var(--fall-duration) ease-in forwards;
+}
+
 @keyframes impact-ring {
   0%   { transform: scale(0); opacity: 1; }
   100% { transform: scale(2.5); opacity: 0; }
@@ -98,6 +114,18 @@ h1 { font-size: 1.5rem; font-weight: 700; }
   0%   { transform: translateY(-5vh) translateX(var(--start-x)) rotate(0deg); opacity: 1; }
   80%  { opacity: 1; }
   100% { transform: translateY(105vh) translateX(calc(var(--start-x) + var(--sway-distance))) rotate(var(--rotation)); opacity: 0; }
+}
+
+@keyframes snow-fall {
+  0%   { transform: translateY(-5vh) translateX(var(--start-x)) rotate(0deg); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(105vh) translateX(calc(var(--start-x) + var(--sway-distance))) rotate(var(--rotation)); opacity: 0; }
+}
+
+@keyframes heart-fall {
+  0%   { transform: translateY(-5vh) translateX(var(--start-x)) scale(0.6); opacity: 1; }
+  60%  { opacity: 1; transform: translateY(60vh) translateX(calc(var(--start-x) + var(--sway-distance))) scale(1) rotate(var(--rotation)); }
+  100% { transform: translateY(105vh) translateX(var(--start-x)) scale(0.8) rotate(calc(var(--rotation) * 1.5)); opacity: 0; }
 }
 
 /* ─── Caption Overlay ──────────────────────────────────── */
