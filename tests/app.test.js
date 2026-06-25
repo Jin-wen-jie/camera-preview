@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const preferredVideoConstraints = {
-  width: { ideal: 1920 },
-  height: { ideal: 1080 },
-  frameRate: { ideal: 60 }
+  width: { min: 1280, ideal: 1920 },
+  height: { min: 720, ideal: 1080 },
+  frameRate: { min: 30, ideal: 60 }
 };
 
 test('page and app cache-bust semantic voice modules together', async () => {

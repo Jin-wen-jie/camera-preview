@@ -1,9 +1,9 @@
 import { setStatus } from './utils.js';
 
 const preferredVideoConstraints = {
-  width: { ideal: 1920 },
-  height: { ideal: 1080 },
-  frameRate: { ideal: 60 }
+  width: { min: 1280, ideal: 1920 },
+  height: { min: 720, ideal: 1080 },
+  frameRate: { min: 30, ideal: 60 }
 };
 
 function formatCameraReadyMessage(stream) {
@@ -21,6 +21,21 @@ function formatCameraReadyMessage(stream) {
   return ['摄像头已开启', ...details].join(' · ');
 }
 
+async function boostVideoTrack(stream) {
+  const track = stream?.getVideoTracks?.()[0];
+  if (!track) return;
+
+  try {
+    await track.applyConstraints({
+      width: { ideal: 1920 },
+      height: { ideal: 1080 },
+      frameRate: { ideal: 60 }
+    });
+  } catch {
+    // 设备不支持更高参数时静默降级
+  }
+}
+
 export async function startCamera({ mediaDevices, video, status }) {
   if (!mediaDevices?.getUserMedia) {
     const message = '当前浏览器不支持摄像头访问，请使用 Chrome、Edge 或 Safari 打开 HTTPS 页面';
@@ -36,6 +51,7 @@ export async function startCamera({ mediaDevices, video, status }) {
       audio: false
     });
     video.srcObject = stream;
+    await boostVideoTrack(stream);
     await video.play?.();
     setStatus(status, formatCameraReadyMessage(stream), 'ready');
     return stream;
