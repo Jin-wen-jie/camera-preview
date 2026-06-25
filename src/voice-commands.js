@@ -37,9 +37,7 @@ const COMMANDS = [
   }
 ];
 
-function normalize(text) {
-  return String(text || '').replace(/\s+/g, '');
-}
+import { normalize } from './utils.js';
 
 export function parseVoiceCommand(text) {
   const normalizedText = normalize(text);

@@ -1,13 +1,7 @@
+import { setStatus } from './utils.js';
+
 const EMPTY_CAPTION = '字幕将在这里显示';
 const UNSUPPORTED_MESSAGE = '当前浏览器不支持实时字幕';
-
-function setStatus(status, text, state) {
-  if (!status) return;
-  status.textContent = text;
-  if (status.dataset) {
-    status.dataset.state = state;
-  }
-}
 
 function setCaption(output, text, state) {
   if (!output) return;

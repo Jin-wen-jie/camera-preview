@@ -1,3 +1,5 @@
+import { normalize } from './utils.js';
+
 const FLOWER_TRIGGER = {
   phrases: ['花'],
   type: 'flower',
@@ -6,10 +8,6 @@ const FLOWER_TRIGGER = {
 const FLOWER_GLYPHS = ['🌸', '🌺', '✿', '❀', '❁'];
 const FLOWER_SEA_COUNT = 108;
 const FLOWER_SEA_COLUMNS = 36;
-
-function normalizeTranscript(text) {
-  return String(text || '').replace(/\s+/g, '');
-}
 
 function setStyleIndex(element, index) {
   element.style?.setProperty?.('--i', String(index));
@@ -77,7 +75,7 @@ export function createVoiceEffectController({
   }
 
   function findTrigger(text) {
-    const normalizedText = normalizeTranscript(text);
+    const normalizedText = normalize(text);
     return FLOWER_TRIGGER.phrases.some((phrase) => normalizedText.includes(phrase))
       ? FLOWER_TRIGGER
       : null;

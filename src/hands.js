@@ -1,3 +1,5 @@
+import { setStatus } from './utils.js';
+
 const MEDIAPIPE_VERSION = '0.10.35';
 const MEDIAPIPE_MODULE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/vision_bundle.mjs`;
 const MEDIAPIPE_WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
@@ -5,14 +7,6 @@ const HAND_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_lan
 const THUMB_TIP = 4;
 const INDEX_TIP = 8;
 const TRAIL_RETENTION_MS = 5000;
-
-function setStatus(status, text, state) {
-  if (!status) return;
-  status.textContent = text;
-  if (status.dataset) {
-    status.dataset.state = state;
-  }
-}
 
 function hasPoint(landmarks, index) {
   return Number.isFinite(landmarks?.[index]?.x) && Number.isFinite(landmarks?.[index]?.y);

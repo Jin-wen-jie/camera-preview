@@ -108,7 +108,6 @@ function createCanvas() {
 async function loadAppWithFakes({
   getUserMedia,
   SpeechRecognition = FakeSpeechRecognition,
-  FaceDetector,
   requestAnimationFrame = () => 0,
   cancelAnimationFrame = () => {}
 }) {
@@ -205,7 +204,6 @@ async function loadAppWithFakes({
   globalThis.window = {
     SpeechRecognition,
     webkitSpeechRecognition: SpeechRecognition,
-    FaceDetector,
     addEventListener(type, listener) {
       if (type === 'beforeunload') {
         beforeUnloadListeners.push(listener);
@@ -325,20 +323,10 @@ test('app starts live captions from the caption button', async () => {
 
 test('app triggers flower effects from recognized speech', async () => {
   FakeSpeechRecognition.instances = [];
-  class FakeFaceDetector {
-    async detect() {
-      return [
-        {
-          boundingBox: { x: 200, y: 150, width: 200, height: 180 }
-        }
-      ];
-    }
-  }
 
   const stream = { getTracks: () => [] };
 
   const { captionStartButton, effectLayer } = await loadAppWithFakes({
-    FaceDetector: FakeFaceDetector,
     async getUserMedia() {
       return stream;
     }
@@ -468,48 +456,7 @@ test('app rejects removed typed commands', async () => {
   assert.equal(effectStatus.dataset.state, 'error');
 });
 
-test('app shows flower sea without waiting for face detection from typed commands', async () => {
-  const faceDetections = [];
-  class FakeFaceDetector {
-    async detect() {
-      faceDetections.push('detect');
-      return [
-        {
-          boundingBox: { x: 200, y: 150, width: 200, height: 180 }
-        }
-      ];
-    }
-  }
-
-  const stream = { getTracks: () => [] };
-
-  const { effectForm, effectInput, effectLayer } = await loadAppWithFakes({
-    FaceDetector: FakeFaceDetector,
-    async getUserMedia() {
-      return stream;
-    }
-  });
-
-  effectInput.value = '花';
-  await effectForm.submit();
-
-  assert.equal(effectLayer.dataset.effect, 'flower');
-  assert.equal(effectLayer.style.values['--effect-x'], undefined);
-  assert.equal(effectLayer.style.values['--effect-y'], undefined);
-  assert.deepEqual(faceDetections, []);
-});
-
 test('app executes recognized finger writing commands from the window event', async () => {
-  class FakeFaceDetector {
-    async detect() {
-      return [
-        {
-          boundingBox: { x: 200, y: 150, width: 200, height: 180 }
-        }
-      ];
-    }
-  }
-
   const stream = { getTracks: () => [] };
 
   const {
@@ -518,7 +465,6 @@ test('app executes recognized finger writing commands from the window event', as
     voiceCommandResult,
     windowListeners
   } = await loadAppWithFakes({
-    FaceDetector: FakeFaceDetector,
     async getUserMedia() {
       return stream;
     }

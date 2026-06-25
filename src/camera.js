@@ -1,10 +1,4 @@
-function setStatus(status, text, state) {
-  if (!status) return;
-  status.textContent = text;
-  if (status.dataset) {
-    status.dataset.state = state;
-  }
-}
+import { setStatus } from './utils.js';
 
 const preferredVideoConstraints = {
   width: { ideal: 1280 },

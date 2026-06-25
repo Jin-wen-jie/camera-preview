@@ -1,7 +1,6 @@
 import { startCamera, stopCamera } from './camera.js';
 import { createCaptionController } from './captions.js?v=replace-latest-2';
 import { createVoiceEffectController } from './effects.js?v=flower-sea';
-import { createFaceAnchorDetector } from './face.js?v=robust-face';
 import { dispatchFingerWritingResult } from './finger-writing-events.js?v=finger-writing-result';
 import { createIndexFingerTrailController } from './hands.js?v=center-index-finger';
 import { parseVoiceCommand } from './voice-commands.js?v=semantic-voice';
@@ -35,10 +34,6 @@ const voiceEffects = createVoiceEffectController({
   layer: effectLayer,
   createElement
 });
-const faceAnchorDetector = createFaceAnchorDetector({
-  FaceDetector: window.FaceDetector,
-  video
-});
 
 function setControls(isRunning) {
   startButton.disabled = isRunning;
@@ -67,10 +62,6 @@ function setVoiceCommandStatus(label, result, state = 'ready') {
   }
 }
 
-async function getEffectOrigin(effectType) {
-  return undefined;
-}
-
 function getEffectReadyText(effect) {
   return `已执行：${effectLabels[effect]}`;
 }
@@ -87,8 +78,7 @@ async function triggerVisualEffect(prompt) {
   const effectType = voiceEffects.getEffectType(prompt);
   if (!effectType) return false;
 
-  const origin = await getEffectOrigin(effectType);
-  return voiceEffects.triggerFromTranscript(prompt, { origin });
+  return voiceEffects.triggerFromTranscript(prompt);
 }
 
 async function executeVoiceCommand(command, transcript) {
