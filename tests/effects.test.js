@@ -138,3 +138,17 @@ test('voice effect controller triggers snow and heart from their phrases', () =>
   assert.equal(layerHeart.dataset.effect, 'heart');
   assert.ok(layerHeart.children.some((c) => c.className.includes('falling-heart')));
 });
+
+test('voice effect controller triggerByKey works for all effect types', () => {
+  for (const [key, expected] of [['flower', 'flower'], ['snow', 'snow'], ['heart', 'heart']]) {
+    const layer = createLayer();
+    const effects = createVoiceEffectController({
+      layer,
+      createElement,
+      timers: { setTimeout() { return 1; }, clearTimeout() {} }
+    });
+    assert.equal(effects.triggerByKey(key), expected);
+    assert.equal(layer.dataset.effect, expected);
+    assert.ok(layer.children.length > 0);
+  }
+});
