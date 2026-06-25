@@ -1,0 +1,17 @@
+# Dev / test files — not needed on the live site
+server.js
+package.json
+package-lock.json
+node_modules/
+.camera-server.json
+tools/
+tests/
+test-flower.png
+test-initial.png
+docs/
+.github/
+.gitignore
+.pagesignore
+*.log
+start-camera-page.cmd
+启动摄像头网页.cmd
