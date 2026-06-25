@@ -10,11 +10,15 @@ test('voice effect layer is positioned absolutely over the effect area', async (
   assert.match(css, /\.voice-effect-layer\s*\{[\s\S]*?pointer-events\s*:\s*none/);
 });
 
-test('falling flower has animation keyframes', async () => {
+test('falling flower has animation with delay support', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(css, /@keyframes\s+flower-fall/);
   assert.match(css, /\.voice-effect--falling-flower/);
+  assert.match(css, /animation-delay/);
+  assert.match(css, /var\(--delay/);
+  assert.match(css, /var\(--x/);
+  assert.match(css, /var\(--drift/);
 });
 
 test('voice command panel has stable row styles', async () => {
