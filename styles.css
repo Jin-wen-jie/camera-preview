@@ -153,6 +153,8 @@ h1 { font-size: 1.5rem; font-weight: 700; }
 .voice-effect--falling-snow {
   animation: snow-fall var(--duration, 5.2s) linear forwards;
   animation-delay: var(--delay, 0ms);
+  filter: drop-shadow(0 0 2px rgba(180, 220, 255, 0.4));
+  color: #b0d4ff;
 }
 
 .voice-effect--falling-heart {

@@ -1,0 +1,14 @@
+{
+  "name": "deepseek-image-filter-proxy",
+  "version": "1.0.0",
+  "description": "过滤 DeepSeek 等纯文本模型不支持的 image_url 消息块",
+  "main": "proxy.js",
+  "scripts": {
+    "start": "node proxy.js"
+  },
+  "keywords": ["deepseek", "proxy", "image-filter", "zcode"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

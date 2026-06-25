@@ -63,7 +63,7 @@ test('voice effect controller shows a full-screen falling flower sea when trigge
   const fallingFlowers = layer.children.filter((child) => (
     child.className === 'voice-effect voice-effect--falling-flower'
   ));
-  assert.equal(fallingFlowers.length, 100);
+  assert.equal(fallingFlowers.length, 180);
   assert.ok(fallingFlowers.every((child) => ['🌸', '🌺', '🌻', '🌷', '🌼', '🌹', '💮', '🪷', '💐'].includes(child.textContent)));
   assert.ok(fallingFlowers.every((child) => child.style.values['--x'].endsWith('%')));
   assert.ok(fallingFlowers.every((child) => child.style.values['--delay'].endsWith('ms')));

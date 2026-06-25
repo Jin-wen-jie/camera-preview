@@ -171,7 +171,8 @@ document.addEventListener('keydown', (event) => {
   // Ignore when user is typing in input
   if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
 
-  const shortcut = KEYBOARD_SHORTCUTS[event.key];
+  const key = event.key === 'Escape' ? 'Escape' : event.key.toLowerCase();
+  const shortcut = KEYBOARD_SHORTCUTS[key];
   if (!shortcut) return;
 
   event.preventDefault();
@@ -183,8 +184,9 @@ document.addEventListener('keydown', (event) => {
   } else {
     voiceEffects.triggerByKey(shortcut.key);
     const label = EFFECT_LABELS[shortcut.key] || shortcut.key;
+    const displayKey = key === 'Escape' ? 'Esc' : key.toUpperCase();
     setEffectStatus(`已执行：${label}`, 'success');
-    setVoiceCommandStatus(`键盘 [${event.key.toUpperCase()}]`, label, 'success');
+    setVoiceCommandStatus(`键盘 [${displayKey}]`, label, 'success');
   }
 });
 

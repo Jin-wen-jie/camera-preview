@@ -9,22 +9,22 @@ export const EFFECT_COMMANDS = [
     // ── Effect rendering ──
     key: 'flower',
     className: 'voice-effect voice-effect--falling-flower',
-    glyphs: ['🌸', '🌺', '🌻', '🌷', '🌼', '🌹', '💮', '🪷', '💐'],
-    count: 100,
-    columns: 50,
-    fallBase: 3600,
-    fallRange: 2400
+    glyphs: ['🌸', '🌺', '🌻', '🌷', '🌼', '🌹', '💮', '🪷', '💐', '🌸', '🌺', '🌷', '🌹'],
+    count: 180,
+    columns: 60,
+    fallBase: 3800,
+    fallRange: 2800
   },
   {
     label: '雪',
     phrases: ['雪', '下雪', '雪花', '雪景', '飘雪'],
     key: 'snow',
     className: 'voice-effect voice-effect--falling-snow',
-    glyphs: ['❄️', '❅', '❆', '•', '·'],
-    count: 70,
-    columns: 35,
-    fallBase: 3800,
-    fallRange: 2800
+    glyphs: ['❄️', '❄️', '❅', '❆', '✨', '❄️'],
+    count: 120,
+    columns: 40,
+    fallBase: 4000,
+    fallRange: 3000
   },
   {
     label: '爱心',

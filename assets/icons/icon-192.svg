@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="32" fill="url(#bg)"/>
+  <!-- 花 -->
+  <text x="96" y="80" text-anchor="middle" font-size="64">🌸</text>
+  <!-- 雪花 -->
+  <text x="60" y="150" text-anchor="middle" font-size="40" opacity="0.5">❄️</text>
+  <!-- 爱心 -->
+  <text x="132" y="145" text-anchor="middle" font-size="36" opacity="0.5">💕</text>
+</svg>
