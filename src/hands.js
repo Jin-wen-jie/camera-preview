@@ -204,10 +204,16 @@ export function createIndexFingerTrailController({
     sizeCanvas();
     context.clearRect(0, 0, canvas.width, canvas.height);
 
+    let drawn = 0;
     for (const stroke of strokes) {
       if (stroke.length > 0) {
         drawSegment(stroke);
+        drawn += stroke.length;
       }
+    }
+
+    if (!recording && strokes.length > 0 && status) {
+      status.textContent = `${drawn} 点 · ${strokes.length} 笔`;
     }
   }
 
