@@ -8,12 +8,12 @@ const preferredVideoConstraints = {
   frameRate: { min: 30, ideal: 60 }
 };
 
-test('page and app cache-bust persistent trail modules together', async () => {
+test('page and app cache-bust resilient render modules together', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const source = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
 
-  assert.match(html, /src="\.\/src\/app\.js\?v=persistent-trail"/);
-  assert.match(source, /hands\.js\?v=persistent-trail/);
+  assert.match(html, /src="\.\/src\/app\.js\?v=resilient-render"/);
+  assert.match(source, /hands\.js\?v=resilient-render/);
   assert.match(source, /effects\.js\?v=flower-sea/);
   assert.match(source, /voice-commands\.js\?v=semantic-voice/);
 });

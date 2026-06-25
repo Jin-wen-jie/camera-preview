@@ -2,7 +2,7 @@ import { startCamera, stopCamera } from './camera.js';
 import { createCaptionController } from './captions.js?v=replace-latest-2';
 import { createVoiceEffectController } from './effects.js?v=flower-sea';
 import { dispatchFingerWritingResult } from './finger-writing-events.js?v=finger-writing-result';
-import { createIndexFingerTrailController } from './hands.js?v=persistent-trail';
+import { createIndexFingerTrailController } from './hands.js?v=resilient-render';
 import { parseVoiceCommand } from './voice-commands.js?v=semantic-voice';
 
 const cameraShell = document.querySelector('[data-camera-shell]');

@@ -261,3 +261,40 @@ test('controller inserts null break markers in trailPoints between strokes', () 
   assert.equal(trailPoints[3].timestamp, 1300);
   assert.equal(trailPoints[4].timestamp, 1400);
 });
+
+test('controller keeps trail indefinitely after pause even beyond 10 seconds', () => {
+  const states = [];
+  const controller = createIndexFingerTrailController({
+    video: { videoWidth: 640, videoHeight: 480 },
+    canvas: createCanvas(),
+    status: { textContent: '', dataset: {} },
+    createHandLandmarker: async () => null,
+    requestAnimationFrame: () => 0,
+    cancelAnimationFrame: () => {},
+    onStatusChange: (state) => states.push(state),
+    now: () => 0
+  });
+
+  // 食指伸出，写一笔 (3个点)
+  controller.processLandmarks(indexOnlyLandmarks(0.40, 0.30), 1000);
+  controller.processLandmarks(indexOnlyLandmarks(0.45, 0.34), 1100);
+  controller.processLandmarks(indexOnlyLandmarks(0.50, 0.38), 1200);
+  assert.equal(controller.getTrailPoints().length, 3);
+  assert.equal(controller.isRecording(), true);
+
+  // 手指收回，暂停
+  controller.processLandmarks(fistLandmarks(), 1300);
+  assert.equal(controller.isRecording(), false);
+  assert.equal(states.at(-1), 'paused');
+
+  // 等待超过 10 秒（手不在画面中）
+  controller.processLandmarks(null, 14000);
+  controller.processLandmarks(null, 15000);
+
+  // 轨迹必须仍然保留！
+  const trailPoints = controller.getTrailPoints();
+  assert.equal(trailPoints.length, 3, 'trail should persist after 10+ seconds pause');
+  assert.equal(trailPoints[0].timestamp, 1000);
+  assert.equal(trailPoints[1].timestamp, 1100);
+  assert.equal(trailPoints[2].timestamp, 1200);
+});

@@ -332,14 +332,21 @@ export function createIndexFingerTrailController({
   }
 
   async function tick() {
-    const timestamp = now();
-    const activeDetector = await getDetector();
-    if (activeDetector && video?.videoWidth && video.currentTime !== lastVideoTime) {
-      lastVideoTime = video.currentTime;
-      const hands = activeDetector.detect(video, timestamp);
-      processLandmarks(hands || null, timestamp);
-    } else {
+    try {
+      const timestamp = now();
+      const activeDetector = await getDetector();
+      try {
+        if (activeDetector && video?.videoWidth && video.currentTime !== lastVideoTime) {
+          lastVideoTime = video.currentTime;
+          const hands = activeDetector.detect(video, timestamp);
+          processLandmarks(hands || null, timestamp);
+        }
+      } catch {
+        // 手势检测异常时忽略，保证渲染不中断
+      }
       draw();
+    } catch {
+      // 即使 draw 异常也不中断循环
     }
 
     if (requestAnimationFrame) {
