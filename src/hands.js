@@ -7,7 +7,7 @@ const MEDIAPIPE_WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision
 const HAND_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 const THUMB_TIP = 4;
 const INDEX_TIP = 8;
-const TRAIL_RETENTION_MS = 5000;
+const TRAIL_RETENTION_MS = Infinity;
 const MIN_POINT_DISTANCE = 0.002;
 
 function hasPoint(landmarks, index) {
@@ -166,21 +166,20 @@ export function createIndexFingerTrailController({
     }
   }
 
-  function drawSegment(segment, timestamp) {
+  function drawSegment(segment) {
     if (segment.length < 2) return;
 
     let prevMidX = segment[0].x;
     let prevMidY = segment[0].y;
 
+    context.strokeStyle = 'rgba(255, 230, 92, 1)';
+    context.lineWidth = 5;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+
     for (let i = 1; i < segment.length; i += 1) {
       const previous = segment[i - 1];
       const current = segment[i];
-      const age = timestamp - current.timestamp;
-      const alpha = Math.max(0, 1 - (age / TRAIL_RETENTION_MS));
-      context.strokeStyle = `rgba(255, 230, 92, ${alpha})`;
-      context.lineWidth = 5;
-      context.lineCap = 'round';
-      context.lineJoin = 'round';
       context.beginPath();
 
       if (i === 1) {
@@ -199,21 +198,16 @@ export function createIndexFingerTrailController({
     }
   }
 
-  function draw(timestamp = now()) {
+  function draw() {
     if (!context || !canvas) return;
     sizeCanvas();
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     for (const stroke of strokes) {
-      const visible = stroke.filter(
-        (point) => timestamp - point.timestamp <= TRAIL_RETENTION_MS
-      );
-      if (visible.length > 0) {
-        drawSegment(visible, timestamp);
+      if (stroke.length > 0) {
+        drawSegment(stroke);
       }
     }
-
-    trailPoints = pruneTrailPoints(trailPoints, timestamp);
   }
 
   function addIndexPoint(landmarks, timestamp) {
@@ -279,7 +273,7 @@ export function createIndexFingerTrailController({
     lastSmoothedPoint = null;
     pointFilter.reset();
     updateStatus('五指张开已输出并清屏', 'cleared');
-    draw(timestamp);
+    draw();
   }
 
   function pauseRecording() {
@@ -315,8 +309,7 @@ export function createIndexFingerTrailController({
       addIndexPoint(activeHand, timestamp);
     }
 
-    trailPoints = pruneTrailPoints(trailPoints, timestamp);
-    draw(timestamp);
+    draw();
   }
 
   async function getDetector() {
@@ -346,7 +339,7 @@ export function createIndexFingerTrailController({
       const hands = activeDetector.detect(video, timestamp);
       processLandmarks(hands || null, timestamp);
     } else {
-      draw(timestamp);
+      draw();
     }
 
     if (requestAnimationFrame) {
