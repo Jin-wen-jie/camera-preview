@@ -12,7 +12,7 @@ test('page and app cache-bust semantic voice modules together', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const source = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
 
-  assert.match(html, /src="\.\/src\/app\.js\?v=semantic-voice"/);
+  assert.match(html, /src="\.\/src\/app\.js\?v=stroke-isolation"/);
   assert.match(source, /effects\.js\?v=flower-sea/);
   assert.match(source, /voice-commands\.js\?v=semantic-voice/);
 });

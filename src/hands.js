@@ -105,7 +105,7 @@ function resolveActiveHand(landmarks) {
 }
 
 export function pruneTrailPoints(points, timestamp, retentionMs = TRAIL_RETENTION_MS) {
-  return points.filter((point) => timestamp - point.timestamp <= retentionMs);
+  return points.filter((point) => point === null || timestamp - point.timestamp <= retentionMs);
 }
 
 export async function createMediaPipeHandLandmarker({
@@ -222,6 +222,9 @@ export function createIndexFingerTrailController({
     sizeCanvas();
 
     if (!currentStroke) {
+      if (trailPoints.length > 0) {
+        trailPoints.push(null);
+      }
       currentStroke = [];
       strokes.push(currentStroke);
       pointFilter.reset();

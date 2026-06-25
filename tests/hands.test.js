@@ -119,6 +119,21 @@ test('pruneTrailPoints removes points older than the retention window', () => {
   ]);
 });
 
+test('pruneTrailPoints preserves null stroke-break markers', () => {
+  const points = [
+    { x: 10, y: 10, timestamp: 900 },
+    null,
+    { x: 20, y: 20, timestamp: 6000 },
+    { x: 30, y: 30, timestamp: 7000 }
+  ];
+
+  assert.deepEqual(pruneTrailPoints(points, 7000, 5000), [
+    null,
+    { x: 20, y: 20, timestamp: 6000 },
+    { x: 30, y: 30, timestamp: 7000 }
+  ]);
+});
+
 test('controller records while the index finger is extended and pauses when it folds', () => {
   const states = [];
   const controller = createIndexFingerTrailController({
@@ -219,4 +234,30 @@ test('controller emits a finger writing result when open palm finishes writing',
   assert.deepEqual(results[0].strokes[1], [
     { x: 332.8, y: 182.4, timestamp: 1200 }
   ]);
+});
+
+test('controller inserts null break markers in trailPoints between strokes', () => {
+  const controller = createIndexFingerTrailController({
+    video: { videoWidth: 640, videoHeight: 480 },
+    canvas: createCanvas(),
+    status: { textContent: '', dataset: {} },
+    createHandLandmarker: async () => null,
+    requestAnimationFrame: () => 0,
+    cancelAnimationFrame: () => {},
+    now: () => 0
+  });
+
+  controller.processLandmarks(indexOnlyLandmarks(0.40, 0.30), 1000);
+  controller.processLandmarks(indexOnlyLandmarks(0.45, 0.34), 1100);
+  controller.processLandmarks(fistLandmarks(), 1200);
+  controller.processLandmarks(indexOnlyLandmarks(0.52, 0.38), 1300);
+  controller.processLandmarks(indexOnlyLandmarks(0.56, 0.42), 1400);
+
+  const trailPoints = controller.getTrailPoints();
+  assert.equal(trailPoints.length, 5);
+  assert.equal(trailPoints[0].timestamp, 1000);
+  assert.equal(trailPoints[1].timestamp, 1100);
+  assert.equal(trailPoints[2], null);
+  assert.equal(trailPoints[3].timestamp, 1300);
+  assert.equal(trailPoints[4].timestamp, 1400);
 });
