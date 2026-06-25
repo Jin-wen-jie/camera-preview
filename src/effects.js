@@ -5,11 +5,11 @@ const EFFECT_DEFS = [
     phrases: ['花'],
     type: 'flower',
     className: 'voice-effect voice-effect--falling-flower',
-    glyphs: ['🌸', '🌺', '✿', '❀', '❁'],
-    count: 108,
-    columns: 36,
-    fallBase: 4400,
-    fallRange: 2100
+    glyphs: ['🌸', '🌺', '🌻', '🌷', '💐', '🌼', '🏵️', '🌹', '💮'],
+    count: 150,
+    columns: 50,
+    fallBase: 3600,
+    fallRange: 2400
   },
   {
     phrases: ['雪', '雪花'],
@@ -41,19 +41,21 @@ function setFallMotion(def, element, index) {
   const column = index % def.columns;
   const wave = Math.floor(index / def.columns);
   const x = (column / (def.columns - 1)) * 100;
-  const drift = ((index % 9) - 4) * 4.25;
+  const drift = ((index % 9) - 4) * 5.5;
   const duration = def.fallBase + ((index * 137) % def.fallRange);
-  const delay = (wave * 360) + ((column % 12) * 52);
-  const scale = 0.68 + ((index % 8) * 0.09);
-  const spin = (index % 2 === 0 ? 1 : -1) * (280 + ((index % 7) * 58));
+  const delay = (wave * 280) + ((column % 12) * 45);
+  const scale = 0.5 + ((index % 12) * 0.09);
+  const spin = (index % 2 === 0 ? 1 : -1) * (200 + ((index % 7) * 70));
+  const opacity = 0.6 + ((index % 10) * 0.04);
 
   element.style?.setProperty?.('--x', `${x.toFixed(2)}%`);
-  element.style?.setProperty?.('--start-y', `${(-28 - (wave * 18)).toFixed(2)}%`);
+  element.style?.setProperty?.('--start-y', `${(-24 - (wave * 14)).toFixed(2)}%`);
   element.style?.setProperty?.('--drift', `${drift.toFixed(2)}vw`);
   element.style?.setProperty?.('--duration', `${duration}ms`);
   element.style?.setProperty?.('--delay', `${delay}ms`);
   element.style?.setProperty?.('--scale', scale.toFixed(2));
   element.style?.setProperty?.('--spin', `${spin}deg`);
+  element.style?.setProperty?.('--opacity', opacity.toFixed(2));
 }
 
 export function createVoiceEffectController({

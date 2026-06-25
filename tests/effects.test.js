@@ -63,17 +63,19 @@ test('voice effect controller shows a full-screen falling flower sea when speech
   const fallingFlowers = layer.children.filter((child) => (
     child.className === 'voice-effect voice-effect--falling-flower'
   ));
-  assert.equal(fallingFlowers.length, 108);
-  assert.ok(fallingFlowers.every((child) => ['🌸', '🌺', '✿', '❀', '❁'].includes(child.textContent)));
+  assert.equal(fallingFlowers.length, 150);
+  assert.ok(fallingFlowers.every((child) => ['🌸', '🌺', '🌻', '🌷', '💐', '🌼', '🏵️', '🌹', '💮'].includes(child.textContent)));
   assert.ok(fallingFlowers.every((child) => child.style.values['--x'].endsWith('%')));
   assert.ok(fallingFlowers.every((child) => child.style.values['--delay'].endsWith('ms')));
   assert.ok(fallingFlowers.every((child) => child.style.values['--duration'].endsWith('ms')));
   assert.ok(fallingFlowers.every((child) => child.style.values['--drift'].endsWith('vw')));
+  assert.ok(fallingFlowers.every((child) => child.style.values['--scale']));
+  assert.ok(fallingFlowers.every((child) => child.style.values['--opacity']));
 
   const xs = fallingFlowers.map((child) => readPercent(child.style.values['--x']));
   assert.ok(Math.min(...xs) <= 1);
   assert.ok(Math.max(...xs) >= 99);
-  assert.ok(new Set(fallingFlowers.map((child) => child.textContent)).size >= 4);
+  assert.ok(new Set(fallingFlowers.map((child) => child.textContent)).size >= 6);
   assert.equal(layer.children.some((child) => child.className === 'voice-effect voice-effect--petal'), false);
 });
 
