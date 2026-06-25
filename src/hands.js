@@ -213,13 +213,6 @@ export function createIndexFingerTrailController({
       }
     }
 
-    if (currentStroke) {
-      const visible = currentStroke.filter(
-        (point) => timestamp - point.timestamp <= TRAIL_RETENTION_MS
-      );
-      drawSegment(visible, timestamp);
-    }
-
     trailPoints = pruneTrailPoints(trailPoints, timestamp);
   }
 
