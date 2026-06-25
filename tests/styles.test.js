@@ -39,6 +39,13 @@ test('status rows have per-state color variants', async () => {
   assert.match(css, /strong\[data-state="error"\]/);
 });
 
+test('camera preview has horizontal mirror correction', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.camera-preview/);
+  assert.match(css, /transform\s*:\s*scaleX\(-1\)/);
+});
+
 test('app shell uses grid layout with control panel side column', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 

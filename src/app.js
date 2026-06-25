@@ -1,6 +1,7 @@
-import { createCaptionController } from './captions.js?v=voice-only';
-import { createVoiceEffectController } from './effects.js?v=voice-only';
-import { parseVoiceCommand } from './voice-commands.js?v=voice-only';
+import { createCaptionController } from './captions.js?v=camera-voice';
+import { createVoiceEffectController } from './effects.js?v=camera-voice';
+import { parseVoiceCommand } from './voice-commands.js?v=camera-voice';
+import { startCamera, stopCamera } from './camera.js?v=camera-voice';
 
 // ─── DOM elements ────────────────────────────────────────
 
@@ -19,6 +20,9 @@ const voiceCommandText = document.querySelector('[data-voice-command-text]');
 const voiceCommandResult = document.querySelector('[data-voice-command-result]');
 
 const effectLayer = document.querySelector('[data-voice-effects]');
+
+const video = document.querySelector('[data-camera-preview]');
+const cameraStatus = document.querySelector('[data-camera-status] strong');
 
 // ─── Status helpers ──────────────────────────────────────
 
@@ -130,3 +134,11 @@ effectForm.addEventListener('submit', async (event) => {
 
 setEffectStatus(getEffectReadyText(), 'idle');
 setVoiceCommandStatus('语音指令', '点击下方按钮开始识别', 'idle');
+
+// ─── Start camera ────────────────────────────────────────
+
+startCamera({
+  mediaDevices: navigator.mediaDevices,
+  video,
+  status: cameraStatus
+}).catch(() => {});
