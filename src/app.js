@@ -94,11 +94,13 @@ async function handleVoiceTranscript(transcript) {
 // ─── Live captions ───────────────────────────────────────
 
 const captions = createCaptionController({
+  SpeechRecognition: globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition,
   output: captionOverlay,
+  status: captionStatus,
   onTranscript: (_visibleTranscript, recentTranscript) => {
     void handleVoiceTranscript(recentTranscript);
   },
-  onStatusChange({ isListening }) {
+  onStateChange(isListening) {
     setCaptionControls(isListening);
     if (captionStatus) {
       captionStatus.textContent = isListening ? '识别中' : '已停止';
