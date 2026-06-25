@@ -1,7 +1,7 @@
-import { createCaptionController } from './captions.js?v=4';
-import { createVoiceEffectController } from './effects.js?v=4';
-import { parseVoiceCommand } from './voice-commands.js?v=4';
-import { startCamera, stopCamera } from './camera.js?v=4';
+import { createCaptionController } from './captions.js?v=5';
+import { createVoiceEffectController } from './effects.js?v=5';
+import { parseVoiceCommand } from './voice-commands.js?v=5';
+import { startCamera, stopCamera } from './camera.js?v=5';
 
 // ─── DOM elements ────────────────────────────────────────
 

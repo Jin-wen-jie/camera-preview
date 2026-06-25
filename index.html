@@ -11,6 +11,7 @@
     <title>语音花雨 — 语音驱动特效摄像头预览</title>
 
     <!-- Icons -->
+    <link rel="manifest" href="./manifest.json">
     <link rel="icon" href="./assets/icons/icon-192.svg" sizes="192x192" type="image/svg+xml">
     <link rel="icon" href="./favicon.ico" sizes="16x16" type="image/x-icon">
     <link rel="apple-touch-icon" href="./assets/icons/icon-192.svg">
@@ -28,73 +29,82 @@
     <meta name="twitter:title" content="语音花雨">
     <meta name="twitter:description" content="说出「花」「雪」「爱心」，在摄像头画面上触发花海飘落">
 
-    <link rel="stylesheet" href="./styles.css?v=4">
+    <link rel="stylesheet" href="./styles.css?v=5">
 </head>
 <body>
-<main class="app-shell">
-    <section class="effect-area">
-        <div class="preview-frame">
-            <video class="camera-preview" data-camera-preview autoplay playsinline muted></video>
-            <button class="mirror-toggle" data-mirror-toggle type="button" aria-label="翻转镜像">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="1 4 1 10 7 10"></polyline>
-                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-                </svg>
-            </button>
-        </div>
-        <div class="voice-effect-layer" data-voice-effects aria-hidden="true"></div>
-        <div class="caption-overlay" data-live-caption data-state="idle" aria-live="polite">
-            点击「开启字幕」开始识别语音
-        </div>
-    </section>
-
-    <aside class="control-panel">
-        <h1>语音花雨</h1>
-        <p class="intro">说出「花」，让花海绽放</p>
-
-        <div class="status-row" data-camera-status>
-            <span>摄像头</span>
-            <strong data-state="idle">未启动</strong>
-        </div>
-
-        <div class="voice-command-panel">
-            <div class="voice-command-row">
-                <span class="voice-command-label">语音指令</span>
-                <span data-voice-command-text>等待语音…</span>
+<div class="app-wrapper">
+    <main class="app-shell">
+        <section class="effect-area">
+            <div class="preview-frame">
+                <video class="camera-preview" data-camera-preview autoplay playsinline muted></video>
+                <button class="mirror-toggle" data-mirror-toggle type="button" aria-label="翻转镜像">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                </button>
             </div>
-            <div class="voice-command-row">
-                <strong data-voice-command-result data-state="idle">点击下方按钮开始识别</strong>
+            <div class="voice-effect-layer" data-voice-effects aria-hidden="true"></div>
+            <div class="caption-overlay" data-live-caption data-state="idle" aria-live="polite">
+                点击「开启字幕」开始识别语音
             </div>
-        </div>
+        </section>
 
-        <div class="status-row" data-caption-status>
-            <span>字幕</span>
-            <strong data-state="idle">未启动</strong>
-        </div>
-        <button class="primary-button" data-caption-start type="button">开启字幕</button>
-        <button class="secondary-button" data-caption-stop disabled type="button">关闭字幕</button>
+        <aside class="control-panel">
+            <h1>语音花雨</h1>
+            <p class="intro">说出「花」，让花海绽放</p>
 
-        <form class="effect-command" data-effect-form>
-            <label class="effect-command-label" for="effect-command-input">手动输入</label>
-            <div class="effect-command-row">
-                <input
-                    class="effect-command-input"
-                    type="text"
-                    id="effect-command-input"
-                    data-effect-input
-                    placeholder="输入「花」"
-                >
-                <button class="primary-button" type="submit" data-effect-submit>执行</button>
+            <div class="status-row" data-camera-status>
+                <span>摄像头</span>
+                <strong data-state="idle">未启动</strong>
             </div>
-            <div class="status-row" data-effect-status>
-                <strong data-state="idle">输入指令触发特效</strong>
+
+            <div class="voice-command-panel">
+                <div class="voice-command-row">
+                    <span class="voice-command-label">语音指令</span>
+                    <span data-voice-command-text>等待语音…</span>
+                </div>
+                <div class="voice-command-row">
+                    <strong data-voice-command-result data-state="idle">点击下方按钮开始识别</strong>
+                </div>
             </div>
-        </form>
 
-        <p class="hint" data-shortcut-hint>键盘快捷键：<kbd>F</kbd> 花 · <kbd>S</kbd> 雪 · <kbd>H</kbd> 心 · <kbd>Esc</kbd> 清除 · 浏览器需允许麦克风权限 · 推荐 Chrome</p>
-    </aside>
-</main>
+            <div class="status-row" data-caption-status>
+                <span>字幕</span>
+                <strong data-state="idle">未启动</strong>
+            </div>
+            <button class="primary-button" data-caption-start type="button">开启字幕</button>
+            <button class="secondary-button" data-caption-stop disabled type="button">关闭字幕</button>
 
-<script type="module" src="./src/app.js?v=4"></script>
+            <form class="effect-command" data-effect-form>
+                <label class="effect-command-label" for="effect-command-input">手动输入</label>
+                <div class="effect-command-row">
+                    <input
+                        class="effect-command-input"
+                        type="text"
+                        id="effect-command-input"
+                        data-effect-input
+                        placeholder="输入「花」"
+                    >
+                    <button class="primary-button" type="submit" data-effect-submit>执行</button>
+                </div>
+                <div class="status-row" data-effect-status>
+                    <strong data-state="idle">输入指令触发特效</strong>
+                </div>
+            </form>
+
+            <p class="hint" data-shortcut-hint>键盘快捷键：<kbd>F</kbd> 花 · <kbd>S</kbd> 雪 · <kbd>H</kbd> 心 · <kbd>Esc</kbd> 清除 · 浏览器需允许麦克风权限 · 推荐 Chrome</p>
+        </aside>
+    </main>
+</div>
+
+<script type="module" src="./src/app.js?v=5"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
+</script>
 </body>
 </html>

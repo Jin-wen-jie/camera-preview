@@ -2,7 +2,10 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "node tests/e2e/smoke.mjs",
+    "test:e2e:all": "node tests/e2e/smoke.mjs && node tests/e2e/effects.mjs && node tests/e2e/mirror.mjs",
+    "test:e2e:install": "npx playwright install chromium"
   },
   "dependencies": {
     "playwright": "^1.61.1"

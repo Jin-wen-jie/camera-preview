@@ -36,6 +36,39 @@ export const EFFECT_COMMANDS = [
     columns: 20,
     fallBase: 4000,
     fallRange: 2200
+  },
+  {
+    label: '星星',
+    phrases: ['星星', '星空', '星', '闪烁', '流星'],
+    key: 'star',
+    className: 'voice-effect voice-effect--falling-star',
+    glyphs: ['✨', '⭐', '🌟', '💫', '⭐', '✨'],
+    count: 80,
+    columns: 30,
+    fallBase: 5000,
+    fallRange: 3000
+  },
+  {
+    label: '落叶',
+    phrases: ['落叶', '叶子', '秋', '秋天', '枫叶'],
+    key: 'leaf',
+    className: 'voice-effect voice-effect--falling-leaf',
+    glyphs: ['🍂', '🍁', '🌿', '🍃', '🍂', '🍁', '🌾'],
+    count: 60,
+    columns: 25,
+    fallBase: 5000,
+    fallRange: 3000
+  },
+  {
+    label: '泡泡',
+    phrases: ['泡泡', '气泡', '泡沫', '梦幻', '水'],
+    key: 'bubble',
+    className: 'voice-effect voice-effect--float-bubble',
+    glyphs: ['🫧', '🫧', '💧', '🫧', '🫧'],
+    count: 40,
+    columns: 15,
+    fallBase: 6000,
+    fallRange: 3000
   }
 ];
 

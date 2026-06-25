@@ -1,8 +1,6 @@
 import { findEffectByKey } from './commands.js';
 
-const BATCH_SIZE = 30;
-const BATCH_INTERVAL_MS = 50;
-const IMPACT_CLASS = 'voice-effect-impact';
+const IMPACT_COLOR = 'rgba(79, 70, 229, 0.6)';
 
 // Deterministic pseudo-random for natural variation
 function pseudoRand(seed, index) {
@@ -10,151 +8,383 @@ function pseudoRand(seed, index) {
   return x - Math.floor(x);
 }
 
-function setFallMotion(cmd, element, index) {
-  const seed = cmd.key === 'flower' ? 7919 : (cmd.key === 'snow' ? 6271 : 4523);
+// ─── Particle class ───────────────────────────────────────
 
-  // ── Horizontal position with jitter ──
-  const columnBase = index % cmd.columns;
-  const jitter = (pseudoRand(seed, index) - 0.5) * 0.3;
-  const columnJittered = Math.max(0, Math.min(cmd.columns - 1, columnBase + jitter));
-  const x = (columnJittered / (cmd.columns - 1)) * 100;
+class Particle {
+  constructor(cmd, index, viewportW, viewportH) {
+    const seedKeys = { flower: 7919, snow: 6271, heart: 4523, star: 3499, leaf: 8017, bubble: 6257 };
+    const seed = seedKeys[cmd.key] || 4523;
 
-  // ── Wave staggering ──
-  const wave = Math.floor(index / cmd.columns);
+    const columns = cmd.columns;
+    const columnBase = index % columns;
+    const jitter = (pseudoRand(seed, index) - 0.5) * 0.3;
+    const columnJittered = Math.max(0, Math.min(columns - 1, columnBase + jitter));
+    const wave = Math.floor(index / columns);
+    const depthLayer = index % 4;
 
-  // ── Depth layer (0=background → 3=foreground) ──
-  const depthLayer = index % 4;
+    // Position
+    const xRatio = columnJittered / (columns - 1);
+    this.baseX = xRatio * viewportW;
+    this.baseY = cmd.key === 'bubble'
+      ? viewportH * (0.9 + pseudoRand(seed + 9, index) * 0.15)
+      : viewportH * (-0.15 - wave * 0.08 - pseudoRand(seed + 9, index) * 0.06);
 
-  // ── Gentle horizontal drift (px) ──
-  const driftDir = pseudoRand(seed + 1, index) < 0.5 ? -1 : 1;
-  const driftMag = 10 + pseudoRand(seed + 10, index) * 35;
-  const drift = (driftDir * driftMag).toFixed(1);
+    this.x = this.baseX;
+    this.y = this.baseY;
 
-  // ── Mid-fall sway (px) ──
-  const swayDir = index % 2 === 0 ? 1 : -1;
-  const swayMag = 8 + pseudoRand(seed + 11, index) * 22;
-  const sway = (swayDir * swayMag).toFixed(1);
+    // Drift & sway
+    const driftDir = pseudoRand(seed + 1, index) < 0.5 ? -1 : 1;
+    this.drift = driftDir * (10 + pseudoRand(seed + 10, index) * 35);
+    const swayDir = index % 2 === 0 ? 1 : -1;
+    this.sway = swayDir * (8 + pseudoRand(seed + 11, index) * 22);
 
-  // ── Duration ──
-  const duration = cmd.fallBase + ((index * 137) % cmd.fallRange);
+    // Timing
+    this.duration = cmd.fallBase + ((index * 137) % cmd.fallRange);
+    this.delay = (wave * 200) + ((columnBase % 12) * 30) + Math.floor(pseudoRand(seed + 2, index) * 50);
+    this.elapsed = -this.delay;
 
-  // ── Delay: staggered cascade ──
-  const delay = (wave * 200) + ((columnBase % 12) * 30) + Math.floor(pseudoRand(seed + 2, index) * 50);
+    // Appearance
+    this.glyph = cmd.glyphs[index % cmd.glyphs.length];
+    this.scale = depthLayer < 2
+      ? (0.45 + pseudoRand(seed + 3, index) * 0.35)
+      : (0.7 + pseudoRand(seed + 4, index) * 0.55);
+    this.fontSize = depthLayer < 2
+      ? 16 + Math.floor(pseudoRand(seed + 5, index) * 14)
+      : 26 + Math.floor(pseudoRand(seed + 6, index) * 18);
+    this.baseOpacity = depthLayer < 2
+      ? (0.3 + pseudoRand(seed + 7, index) * 0.3)
+      : (0.55 + pseudoRand(seed + 8, index) * 0.45);
+    this.opacity = 0;
 
-  // ── Scale: depth-aware ──
-  const scale = depthLayer < 2
-    ? (0.45 + pseudoRand(seed + 3, index) * 0.35).toFixed(2)
-    : (0.7 + pseudoRand(seed + 4, index) * 0.55).toFixed(2);
+    // Rotation
+    const spinDir = index % 2 === 0 ? 1 : -1;
+    this.spin = spinDir * (120 + (index % 11) * 50);
+    this.rotation = 0;
 
-  // ── Font size: true depth ──
-  const fontSize = depthLayer < 2
-    ? 16 + Math.floor(pseudoRand(seed + 5, index) * 14)
-    : 26 + Math.floor(pseudoRand(seed + 6, index) * 18);
+    // Active flag
+    this.alive = true;
+  }
 
-  // ── Spin ──
-  const spinDir = index % 2 === 0 ? 1 : -1;
-  const spin = spinDir * (120 + (index % 11) * 50);
+  update(dt, viewportW, viewportH) {
+    this.elapsed += dt;
 
-  // ── Opacity: depth-aware ──
-  const opacity = depthLayer < 2
-    ? (0.3 + pseudoRand(seed + 7, index) * 0.3).toFixed(2)
-    : (0.55 + pseudoRand(seed + 8, index) * 0.45).toFixed(2);
+    if (this.elapsed < 0) {
+      // Still in delay phase
+      this.opacity = 0;
+      return;
+    }
 
-  // ── Start Y (above viewport, vh units) ──
-  const startY = (-15 - wave * 14 - pseudoRand(seed + 9, index) * 10).toFixed(1);
+    const progress = Math.min(this.elapsed / this.duration, 1);
 
-  // ── Set all CSS custom properties ──
-  const s = element.style;
-  s.setProperty('--x', `${x.toFixed(2)}%`);
-  s.setProperty('--start-y', `${startY}vh`);
-  s.setProperty('--drift', `${drift}px`);
-  s.setProperty('--sway', `${sway}px`);
-  s.setProperty('--duration', `${duration}ms`);
-  s.setProperty('--delay', `${delay}ms`);
-  s.setProperty('--scale', scale);
-  s.setProperty('--spin', `${spin}deg`);
-  s.setProperty('--opacity', opacity);
-  s.setProperty('--font-size', `${fontSize}px`);
+    // Update position based on effect type
+    // Use the same keyframe logic as CSS animations
+    if (this.elapsed < this.duration) {
+      this.y = this.baseY + progress * viewportH * 1.1;
+
+      // Horizontal drift and sway
+      const swayOffset = Math.sin(progress * Math.PI * 3) * this.sway;
+      this.x = this.baseX + swayOffset + progress * this.drift;
+
+      // Rotation
+      this.rotation = (this.spin * progress * Math.PI) / 180;
+
+      // Opacity: fade in early, fade out late
+      if (progress < 0.06) {
+        this.opacity = this.baseOpacity * (progress / 0.06);
+      } else if (progress > 0.88) {
+        this.opacity = this.baseOpacity * Math.max(0, (1 - progress) / 0.12);
+      } else {
+        this.opacity = this.baseOpacity;
+      }
+    } else {
+      this.alive = false;
+    }
+  }
+
+  draw(ctx) {
+    if (!this.alive || this.opacity <= 0) return;
+
+    ctx.save();
+    ctx.globalAlpha = this.opacity;
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+    ctx.scale(this.scale, this.scale);
+    ctx.font = `${this.fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "EmojiOne Color", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.glyph, 0, 0);
+    ctx.restore();
+  }
 }
+
+// ─── Impact ring ──────────────────────────────────────────
+
+class ImpactRing {
+  constructor(viewportW, viewportH) {
+    this.cx = viewportW / 2;
+    this.cy = viewportH / 2;
+    this.maxRadius = Math.min(viewportW, viewportH) * 0.4;
+    this.duration = 1200;
+    this.elapsed = 0;
+    this.alive = true;
+  }
+
+  update(dt) {
+    this.elapsed += dt;
+    if (this.elapsed >= this.duration) {
+      this.alive = false;
+    }
+  }
+
+  draw(ctx) {
+    if (!this.alive) return;
+    const progress = this.elapsed / this.duration;
+    const radius = this.maxRadius * progress;
+    const opacity = 1 - progress;
+
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.beginPath();
+    ctx.arc(this.cx, this.cy, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = IMPACT_COLOR;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// ─── Canvas effect controller ─────────────────────────────
 
 export function createVoiceEffectController({
   layer,
-  createElement = (tagName) => document.createElement(tagName),
+  createElement: _createElement, // ignored — Canvas doesn't use DOM creation
   timers = globalThis,
   durationMs = 7200
 }) {
+  if (!layer) {
+    throw new Error('voice effect layer is required');
+  }
+
+  const hasDOM = typeof document !== 'undefined' && typeof window !== 'undefined';
+
+  const raf = hasDOM
+    ? (window.requestAnimationFrame || window.webkitRequestAnimationFrame || ((fn) => timers.setTimeout(fn, 16)))
+    : ((fn) => timers.setTimeout(fn, 16));
+
+  const caf = hasDOM
+    ? (window.cancelAnimationFrame || window.webkitCancelAnimationFrame || ((id) => timers.clearTimeout(id)))
+    : ((id) => timers.clearTimeout(id));
+
+  let canvas = null;
+  let ctx = null;
+  let particles = [];
+  let rings = [];
+  let animationId = null;
   let clearTimer = null;
+  let lastFrameTime = 0;
+  let running = false;
+
+  function initCanvas() {
+    if (!canvas && hasDOM) {
+      canvas = document.createElement('canvas');
+      canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:block';
+      canvas.setAttribute('aria-hidden', 'true');
+      ctx = canvas.getContext('2d');
+      layer.append(canvas);
+    } else if (!canvas) {
+      // In test/Node.js environment, create a stub canvas
+      const stubCtx = {
+        clearRect() {},
+        save() {},
+        restore() {},
+        translate() {},
+        rotate() {},
+        scale() {},
+        beginPath() {},
+        arc() {},
+        stroke() {},
+        setTransform() {},
+        strokeStyle: '',
+        lineWidth: 0,
+        globalAlpha: 1,
+        font: '',
+        textAlign: '',
+        textBaseline: '',
+        fillText() {}
+      };
+      canvas = {
+        tagName: 'CANVAS',
+        clientWidth: 800,
+        clientHeight: 600,
+        width: 800,
+        height: 600,
+        style: {},
+        setAttribute() {},
+        remove() {
+          const idx = layer.children.indexOf(canvas);
+          if (idx >= 0) layer.children.splice(idx, 1);
+        },
+        getContext() { return stubCtx; }
+      };
+      ctx = stubCtx;
+      layer.append(canvas);
+    }
+    resizeCanvas();
+  }
+
+  function resizeCanvas() {
+    if (!canvas) return;
+    const rect = layer.getBoundingClientRect();
+    const dpr = hasDOM ? (window.devicePixelRatio || 1) : 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function animate(timestamp) {
+    if (!lastFrameTime) lastFrameTime = timestamp;
+    const dt = Math.min(timestamp - lastFrameTime, 50); // cap at 50ms to avoid spiral
+    lastFrameTime = timestamp;
+
+    const viewportW = canvas ? canvas.clientWidth : 800;
+    const viewportH = canvas ? canvas.clientHeight : 600;
+
+    // Update particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      particles[i].update(dt, viewportW, viewportH);
+      if (!particles[i].alive) {
+        particles.splice(i, 1);
+      }
+    }
+
+    // Update impact rings
+    for (let i = rings.length - 1; i >= 0; i--) {
+      rings[i].update(dt);
+      if (!rings[i].alive) {
+        rings.splice(i, 1);
+      }
+    }
+
+    // Clear canvas and draw
+    ctx.clearRect(0, 0, viewportW, viewportH);
+
+    for (const ring of rings) {
+      ring.draw(ctx);
+    }
+
+    for (const p of particles) {
+      if (p.y < viewportH + 50 && p.y > -50) {
+        p.draw(ctx);
+      }
+    }
+
+    // Continue animation
+    if (particles.length > 0 || rings.length > 0) {
+      animationId = raf(animate);
+    } else {
+      running = false;
+      animationId = null;
+      if (canvas) {
+        ctx.clearRect(0, 0, viewportW, viewportH);
+      }
+      if (layer?.dataset) {
+        delete layer.dataset.effect;
+      }
+    }
+  }
+
+  function startAnimation() {
+    if (animationId) return;
+    lastFrameTime = 0;
+    running = true;
+    animationId = raf(animate);
+  }
 
   function clear() {
     if (clearTimer) {
       timers.clearTimeout(clearTimer);
       clearTimer = null;
     }
-    layer?.replaceChildren?.();
+    particles = [];
+    rings = [];
+    if (animationId) {
+      caf(animationId);
+      animationId = null;
+    }
+    running = false;
+    if (ctx && canvas) {
+      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+    }
     if (layer?.dataset) {
       delete layer.dataset.effect;
     }
   }
 
-  function staggerRemove(children) {
-    if (children.length === 0) {
-      if (layer?.dataset) delete layer.dataset.effect;
-      return;
-    }
-
-    let idx = 0;
-    function removeBatch() {
-      const end = Math.min(idx + BATCH_SIZE, children.length);
-      for (let i = idx; i < end; i++) {
-        children[i]?.remove?.();
-      }
-      idx = end;
-      if (idx < children.length) {
-        timers.setTimeout(removeBatch, BATCH_INTERVAL_MS);
-      } else if (layer?.dataset && !clearTimer) {
-        // Only clear dataset if a new effect hasn't started (clearTimer would be set)
-        delete layer.dataset.effect;
-      }
-    }
-    removeBatch();
-  }
-
   function scheduleClear() {
     clearTimer = timers.setTimeout(() => {
       clearTimer = null;
-      // Staggered removal to avoid GC spike from removing 100+ DOM nodes at once
-      const children = [...layer.children];
-      // Keep the impact element for a brief moment, remove particles gradually
-      staggerRemove(children);
+      clear();
     }, durationMs);
-  }
-
-  function appendImpact() {
-    const element = createElement('span');
-    element.className = IMPACT_CLASS;
-    layer.append(element);
-  }
-
-  function appendEffect(cmd) {
-    for (let index = 0; index < cmd.count; index += 1) {
-      const element = createElement('span');
-      element.className = cmd.className;
-      element.textContent = cmd.glyphs[index % cmd.glyphs.length];
-      setFallMotion(cmd, element, index);
-      layer.append(element);
-    }
   }
 
   function show(cmd) {
     clear();
+
     if (layer?.dataset) {
       layer.dataset.effect = cmd.key;
     }
 
-    appendImpact();
-    appendEffect(cmd);
+    initCanvas();
+    resizeCanvas();
+
+    const viewportW = canvas.clientWidth;
+    const viewportH = canvas.clientHeight;
+
+    // Add impact ring
+    rings.push(new ImpactRing(viewportW, viewportH));
+
+    // Create particles
+    for (let index = 0; index < cmd.count; index += 1) {
+      particles.push(new Particle(cmd, index, viewportW, viewportH));
+    }
+
+    startAnimation();
     scheduleClear();
     return cmd.key;
+  }
+
+  // Handle resize
+  function onResize() {
+    if (canvas && particles.length > 0) {
+      const oldW = canvas.clientWidth;
+      const oldH = canvas.clientHeight;
+      resizeCanvas();
+      const newW = canvas.clientWidth;
+      const newH = canvas.clientHeight;
+      // Recalculate base positions for existing particles
+      const scaleX = newW / oldW;
+      const scaleY = newH / oldH;
+      let hasAnimating = false;
+      for (const p of particles) {
+        p.baseX *= scaleX;
+        p.baseY *= scaleY;
+        p.x *= scaleX;
+        p.y *= scaleY;
+        if (p.alive) hasAnimating = true;
+      }
+      for (const ring of rings) {
+        ring.cx *= scaleX;
+        ring.cy *= scaleY;
+        ring.maxRadius *= Math.min(scaleX, scaleY);
+      }
+      if (hasAnimating) startAnimation();
+    }
+  }
+
+  if (hasDOM) {
+    window.addEventListener('resize', onResize);
   }
 
   return {
@@ -162,6 +392,17 @@ export function createVoiceEffectController({
     triggerByKey(key) {
       const cmd = findEffectByKey(key);
       return cmd ? show(cmd) : false;
+    },
+    dispose() {
+      clear();
+      if (hasDOM) {
+        window.removeEventListener('resize', onResize);
+      }
+      if (canvas) {
+        canvas.remove();
+        canvas = null;
+        ctx = null;
+      }
     }
   };
 }

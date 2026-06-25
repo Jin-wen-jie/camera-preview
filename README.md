@@ -165,6 +165,21 @@ node --test tests/effects.test.js
 
 当前测试覆盖：指令匹配、特效引擎、摄像头管理、语音识别控制、CSS 样式断言。
 
+### E2E 测试（Playwright）
+
+```bash
+# 安装浏览器（首次运行）
+npm run test:e2e:install
+
+# 运行冒烟测试
+npm run test:e2e
+
+# 运行全部 E2E 测试
+npm run test:e2e:all
+```
+
+E2E 测试使用 Playwright 启动真实 Chromium 浏览器，验证页面结构、特效触发和镜像翻转功能。截图保存在 `tests/e2e/screenshots/` 目录。
+
 ---
 
 ## 🤝 贡献
