@@ -130,6 +130,10 @@ export function createVoiceEffectController({
     triggerFromTranscript(text) {
       const def = findTrigger(text);
       return def ? show(def) : false;
+    },
+    triggerByKey(key) {
+      const def = EFFECT_DEFS.find((d) => d.type === key);
+      return def ? show(def) : false;
     }
   };
 }

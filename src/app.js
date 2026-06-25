@@ -60,15 +60,11 @@ function setVoiceCommandStatus(label, text, state) {
 
 const voiceEffects = createVoiceEffectController({ layer: effectLayer });
 
-function triggerVisualEffect(prompt) {
-  voiceEffects.triggerFromTranscript(prompt);
-}
-
 // ─── Command execution ───────────────────────────────────
 
 async function executeVoiceCommand(command, _transcript) {
   if (command.type === 'effect') {
-    triggerVisualEffect(command.key);
+    voiceEffects.triggerByKey(command.key);
     const label = EFFECT_LABELS[command.key] || command.label;
     return { text: `已执行：${label}`, state: 'success' };
   }
