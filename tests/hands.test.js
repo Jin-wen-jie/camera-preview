@@ -197,7 +197,11 @@ test('controller clears the screen when five fingers open', () => {
   controller.processLandmarks(indexOnlyLandmarks(0.45, 0.34), 1100);
   assert.equal(controller.getTrailPoints().length, 2);
 
+  // 五指张开需保持 500ms 才触发清屏（防抖）
   controller.processLandmarks(openPalmLandmarks(), 1200);
+  assert.equal(controller.getTrailPoints().length, 2, 'not cleared after first frame');
+
+  controller.processLandmarks(openPalmLandmarks(), 1700);
   assert.equal(controller.isRecording(), false);
   assert.deepEqual(controller.getTrailPoints(), []);
   assert.equal(states.at(-1), 'cleared');
@@ -213,19 +217,21 @@ test('controller emits a finger writing result when open palm finishes writing',
     requestAnimationFrame: () => 0,
     cancelAnimationFrame: () => {},
     onWritingResult: (result) => results.push(result),
-    now: () => 1300
+    now: () => 0
   });
 
   controller.processLandmarks(indexOnlyLandmarks(0.40, 0.30), 1000);
   controller.processLandmarks(indexOnlyLandmarks(0.45, 0.34), 1100);
   controller.processLandmarks(fistLandmarks(), 1150);
   controller.processLandmarks(indexOnlyLandmarks(0.52, 0.38), 1200);
+  // 五指张开需保持 500ms 才触发清屏
   controller.processLandmarks(openPalmLandmarks(), 1300);
+  controller.processLandmarks(openPalmLandmarks(), 1800);
 
   assert.equal(results.length, 1);
   assert.equal(results[0].source, 'finger-writing');
   assert.equal(results[0].text, '');
-  assert.equal(results[0].createdAt, 1300);
+  assert.equal(results[0].createdAt, 1800);
   assert.equal(results[0].strokes.length, 2);
   assert.deepEqual(results[0].strokes[0], [
     { x: 256, y: 144, timestamp: 1000 },

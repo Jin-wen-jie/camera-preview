@@ -147,6 +147,7 @@ export function createIndexFingerTrailController({
   let strokes = [];
   let currentStroke = null;
   let lastVideoTime = -1;
+  let openPalmSince = null;
   const context = canvas?.getContext?.('2d') || null;
   const pointFilter = createPointFilter();
   let lastSmoothedPoint = null;
@@ -299,8 +300,14 @@ export function createIndexFingerTrailController({
     const activeHand = resolveActiveHand(landmarks);
 
     if (isOpenPalm(activeHand)) {
-      clearTrail(timestamp);
-      return;
+      openPalmSince ??= timestamp;
+      if (timestamp - openPalmSince >= 500) {
+        clearTrail(timestamp);
+        openPalmSince = null;
+        return;
+      }
+    } else {
+      openPalmSince = null;
     }
 
     updateRecordingState(activeHand);
@@ -370,6 +377,7 @@ export function createIndexFingerTrailController({
       trailPoints = [];
       strokes = [];
       currentStroke = null;
+      openPalmSince = null;
       lastSmoothedPoint = null;
       pointFilter.reset();
       draw();
